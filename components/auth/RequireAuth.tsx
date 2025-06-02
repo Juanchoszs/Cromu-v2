@@ -1,50 +1,60 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import PinVerification from './PinVerification';
+import { Loader2 } from 'lucide-react';
 
 interface RequireAuthProps {
   children: React.ReactNode;
 }
 
 const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
-  const [isPinVerified, setIsPinVerified] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar si el PIN ya ha sido validado en esta sesión
-    const pinVerified = sessionStorage.getItem('pinVerified') === 'true';
-    setIsPinVerified(pinVerified);
-    setIsLoading(false);
-  }, []);
+    // Verificar si el usuario está autenticado
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/validate-session');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.authenticated) {
+            setIsAuthenticated(true);
+          } else {
+            router.push('/espacio?redirect=/admin');
+          }
+        } else {
+          router.push('/espacio?redirect=/admin');
+        }
+      } catch (error) {
+        console.error('Error al verificar la sesión:', error);
+        router.push('/espacio?redirect=/admin');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handlePinSuccess = () => {
-    setIsPinVerified(true);
-  };
+    checkAuth();
+  }, [router]);
 
-  const handlePinCancel = () => {
-    // Redirigir al usuario a la página principal si cancela la verificación
-    router.push('/');
-  };
-
-  // Mostrar spinner mientras verifica la sesión
+  // Mostrar spinner mientras verifica la autenticación
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Loader2 className="h-12 w-12 animate-spin text-emerald-600" />
       </div>
     );
   }
 
-  // Si el PIN no ha sido verificado, mostrar la pantalla de verificación
-  if (!isPinVerified) {
-    return <PinVerification onSuccess={handlePinSuccess} onCancel={handlePinCancel} />;
+  // Si está autenticado, mostrar el contenido protegido
+  if (isAuthenticated) {
+    return <>{children}</>;
   }
 
-  // Si el PIN ha sido verificado, mostrar el contenido protegido
-  return <>{children}</>;
+  // Por defecto, no mostrar nada (ya que se está redirigiendo)
+  return null;
 };
 
 export default RequireAuth;

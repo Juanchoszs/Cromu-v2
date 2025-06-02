@@ -35,7 +35,24 @@ export default function FormularioAhorrador({ ahorrador, onGuardar, onCancelar }
   // Cargar datos del ahorrador si estamos editando
   useEffect(() => {
     if (ahorrador) {
-      setForm(ahorrador);
+      let fechaIngreso = ahorrador.fechaIngreso;
+
+      // Si es string con hora, corta a YYYY-MM-DD
+      if (typeof fechaIngreso === "string" && fechaIngreso.length > 10) {
+        fechaIngreso = fechaIngreso.slice(0, 10);
+      }
+      // Si es objeto Date, formatea a YYYY-MM-DD
+      if (typeof fechaIngreso === "object" && fechaIngreso !== null && Object.prototype.toString.call(fechaIngreso) === "[object Date]") {
+        const año = (fechaIngreso as Date).getFullYear();
+        const mes = ((fechaIngreso as Date).getMonth() + 1).toString().padStart(2, '0');
+        const dia = (fechaIngreso as Date).getDate().toString().padStart(2, '0');
+        fechaIngreso = `${año}-${mes}-${dia}`;
+      }
+
+      setForm({
+        ...ahorrador,
+        fechaIngreso
+      });
       const mesesOrdenados = Object.keys(ahorrador.historialPagos).sort();
       setMesesEstado(mesesOrdenados);
     }
@@ -178,43 +195,37 @@ export default function FormularioAhorrador({ ahorrador, onGuardar, onCancelar }
       // Calcular el ahorro total sumando todos los montos de pagos
       let ahorroTotal = 0;
       let pagosConsecutivos = 0;
-      
+      let consecutivos = 0;
+
       // Ordenar los meses cronológicamente
       const mesesOrdenados = Object.keys(form.historialPagos).sort();
-      
+
       // Contar pagos consecutivos y calcular ahorro total
       for (const mes of mesesOrdenados) {
         if (form.historialPagos[mes].pagado) {
           ahorroTotal += form.historialPagos[mes].monto;
-          pagosConsecutivos++;
+          consecutivos++;
         } else {
-          // Si hay un mes no pagado, se rompe la consecutividad
-          pagosConsecutivos = 0;
+          consecutivos = 0;
         }
+        // Guardar el máximo de consecutivos alcanzados
+        if (consecutivos > pagosConsecutivos) pagosConsecutivos = consecutivos;
       }
-      
+
       // Crear objeto con datos actualizados
       const datosActualizados = {
         ...form,
         ahorroTotal,
         pagosConsecutivos
       };
-      
+
       if (ahorrador) {
         // Editando ahorrador existente
         onGuardar(datosActualizados);
       } else {
         // Creando nuevo ahorrador
         const datosParaEnviar = {
-          nombre: form.nombre,
-          cedula: form.cedula,
-          fechaIngreso: form.fechaIngreso,
-          telefono: form.telefono,
-          direccion: form.direccion,
-          email: form.email,
-          ahorroTotal,
-          pagosConsecutivos,
-          historialPagos: form.historialPagos,
+          ...datosActualizados,
           incentivoPorFidelidad: true
         };
 

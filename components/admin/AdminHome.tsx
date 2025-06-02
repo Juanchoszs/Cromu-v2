@@ -143,8 +143,8 @@ export default function AdminHome() {
       return sum + Math.round(a.ahorroTotal * (tasaAnual / 100));
     }, 0);
     
-    // Calcular saldo total (ahorros + interés)
-    const saldoTotal = totalAhorros + interesGenerado;
+    // Calcular saldo total (ahorros totales - préstamos totales)
+    const saldoTotal = totalAhorros - totalPrestamos;
     
     // Contar ahorradores y deudores únicos
     const totalAhorradores = ahorradores.length;
@@ -341,10 +341,6 @@ export default function AdminHome() {
   
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-4">Panel Administrativo</h1>
-      <p className="text-gray-300 mb-6">
-        Bienvenido al panel administrativo. Usa el menú lateral para gestionar ahorradores, préstamos o simular un préstamo.
-      </p>
       
       <div className="space-y-6">
         <div>

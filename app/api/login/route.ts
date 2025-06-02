@@ -24,10 +24,27 @@ export async function POST(req: Request) {
 
     // Validación manual para administrador
     if (cedula === "CromuAdmin" && password === "CromuAdministracion#") {
-      return NextResponse.json(
+      // Create session data
+      const sessionData = { username: 'CromuAdmin', role: 'admin', timestamp: Date.now() };
+      
+      // Create response with session cookie
+      const response = NextResponse.json(
         { message: "Inicio de sesión exitoso.", isAdmin: true },
         { status: 200 }
       );
+      
+      // Set secure, httpOnly cookie
+      response.cookies.set({
+        name: 'admin-auth',
+        value: JSON.stringify(sessionData),
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 60 * 60 * 24 // 24 hours
+      });
+      
+      return response;
     }
 
     // Validación para usuarios normales desde la base de datos

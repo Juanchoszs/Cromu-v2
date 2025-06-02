@@ -375,18 +375,47 @@ export default function AhorradoresCrud() {
 
   // Calcular rentabilidad anual
   const calcularRentabilidadAnual = (ahorrador: Ahorrador) => {
-    const tasaBase = 6; // 6% anual base
-    const tasaFidelidad = ahorrador.incentivoPorFidelidad ? 1 : 0; // 1% adicional por fidelidad
-    return tasaBase + tasaFidelidad;
+    // Si el ahorrador tiene 12 o más meses de ahorro, aplica 7% anual (0.583% mensual)
+    // De lo contrario, aplica 0.5% mensual (6% anual)
+    return ahorrador.pagosConsecutivos >= 12 ? 7 : 6;
   };
 
   // Calcular interés y saldo acumulado
   const calcularInteresYSaldo = (ahorrador: Ahorrador) => {
-    const rentabilidadAnual = calcularRentabilidadAnual(ahorrador);
-    const interes = Math.round(ahorrador.ahorroTotal * (rentabilidadAnual / 100));
+    // Si tiene 12 o más meses de ahorro, usa 7% anual (0.583% mensual)
+    // De lo contrario, usa 0.5% mensual (6% anual)
+    const tasaMensual = ahorrador.pagosConsecutivos >= 12 ? 7/12 : 0.5;
+    const interes = Math.round(ahorrador.ahorroTotal * (tasaMensual / 100));
     const saldoTotal = ahorrador.ahorroTotal + interes;
-    return { interes, saldoTotal };
+    return { 
+      interes, 
+      saldoTotal,
+      tasaMensual: parseFloat(tasaMensual.toFixed(3)) // Para mostrar la tasa mensual con 3 decimales
+    };
   };
+
+  // Nueva función para calcular interés y saldo usando interés simple
+  function calcularInteresYSaldoSimple(ahorrador: Ahorrador) {
+    // Sumar el ahorro real del usuario
+    const mesesPagados = Object.values(ahorrador.historialPagos).filter(p => p.pagado);
+    const ahorroTotal = mesesPagados.reduce((acc, p) => acc + (p.monto || 0), 0);
+
+    // Tasa anual y mensual
+    const tasaAnual = ahorrador.pagosConsecutivos >= 12 ? 7 : 6;
+    const tasaMensual = tasaAnual / 12;
+
+    // Interés simple
+    const interesAnual = ahorroTotal * (tasaAnual / 100);
+    const interesMensual = ahorroTotal * (tasaMensual / 100);
+
+    return {
+      interesTotal: Math.round(interesAnual),
+      interesMensual: Math.round(interesMensual),
+      tasaAnual,
+      tasaMensual,
+      ahorroTotal
+    };
+  }
 
   // Mostrar formulario para generar voucher
   const mostrarGenerarVoucher = (ahorrador: Ahorrador) => {
@@ -562,7 +591,16 @@ export default function AhorradoresCrud() {
           ahorradoresToShow.map((ahorrador, index) => {
             const { interes, saldoTotal } = calcularInteresYSaldo(ahorrador);
             const expandido = detallesExpandidos[ahorrador.id] || false;
-            
+
+            // Extraer datos de rentabilidad simple para el resumen financiero
+            const {
+              tasaMensual,
+              interesMensual,
+              ahorroTotal,
+              tasaAnual,
+              interesTotal
+            } = calcularInteresYSaldoSimple(ahorrador);
+
             return (
               <motion.div
                 key={ahorrador.id}
@@ -674,22 +712,46 @@ export default function AhorradoresCrud() {
                           
                           <div className="bg-gray-800 rounded-lg p-4 mb-4 border border-gray-700">
                             <h3 className="text-lg font-semibold text-emerald-400 mb-3">Resumen Financiero</h3>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {/* Columna 1: Rentabilidad Mensual */}
                               <div>
-                                <p className="text-sm text-gray-400">Ahorro Total:</p>
-                                <p className="text-xl font-bold text-white">{formatearMoneda(ahorrador.ahorroTotal)}</p>
+                                <h4 className="font-semibold text-white mb-2">Rentabilidad Mensual</h4>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-gray-400">% Mensual:</span>
+                                  <span className="font-bold text-white">{tasaMensual.toFixed(2)}%</span>
+                                </div>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-gray-400">Interés Mensual Aproximado:</span>
+                                  <span className="font-bold text-white">{formatearMoneda(interesMensual)}</span>
+                                </div>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-gray-400">Ahorro Total:</span>
+                                  <span className="font-bold text-white">{formatearMoneda(ahorroTotal)}</span>
+                                </div>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-gray-400">Saldo Total:</span>
+                                  <span className="font-bold text-white">{formatearMoneda(ahorroTotal + interesMensual)}</span>
+                                </div>
                               </div>
+                              {/* Columna 2: Rentabilidad Anual */}
                               <div>
-                                <p className="text-sm text-gray-400">Rentabilidad Anual:</p>
-                                <p className="text-xl font-bold text-white">{calcularRentabilidadAnual(ahorrador)}%</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-400">Interés Generado:</p>
-                                <p className="text-xl font-bold text-white">{formatearMoneda(Math.round(ahorrador.ahorroTotal * (calcularRentabilidadAnual(ahorrador) / 100)))}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-400">Saldo Total:</p>
-                                <p className="text-xl font-bold text-white">{formatearMoneda(ahorrador.ahorroTotal + Math.round(ahorrador.ahorroTotal * (calcularRentabilidadAnual(ahorrador) / 100)))}</p>
+                                <h4 className="font-semibold text-white mb-2">Rentabilidad Anual</h4>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-gray-400">% Anual:</span>
+                                  <span className="font-bold text-white">{tasaAnual.toFixed(2)}%</span>
+                                </div>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-gray-400">Interés Generado:</span>
+                                  <span className="font-bold text-white">{formatearMoneda(interesTotal)}</span>
+                                </div>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-gray-400">Ahorro Total:</span>
+                                  <span className="font-bold text-white">{formatearMoneda(ahorroTotal)}</span>
+                                </div>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-gray-400">Saldo Total:</span>
+                                  <span className="font-bold text-white">{formatearMoneda(ahorroTotal + interesTotal)}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -717,22 +779,7 @@ export default function AhorradoresCrud() {
                                 >
                                   <div className="flex justify-between items-center mb-2">
                                     <span className="font-medium text-gray-300">{formatearMes(mes)}</span>
-                                    <motion.button
-                                      whileHover={{ scale: 1.1 }}
-                                      whileTap={{ scale: 0.9 }}
-                                      onClick={() => alternarEstadoPago(index, mes)}
-                                      className={`p-1 rounded-full ${
-                                        ahorrador.historialPagos[mes].pagado
-                                          ? 'bg-emerald-600 text-white'
-                                          : 'bg-gray-700 text-gray-400'
-                                      }`}
-                                    >
-                                      {ahorrador.historialPagos[mes].pagado ? (
-                                        <CheckCircle className="h-5 w-5" />
-                                      ) : (
-                                        <XCircle className="h-5 w-5" />
-                                      )}
-                                    </motion.button>
+                                    {/* Botón de pago/eliminar removido */}
                                   </div>
                                   <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -741,15 +788,14 @@ export default function AhorradoresCrud() {
                                     <input
                                       type="number"
                                       value={ahorrador.historialPagos[mes].monto || 0}
-                                      onChange={(e) => actualizarMontoMes(index, mes, parseInt(e.target.value) || 0)}
-                                      className={`w-full p-2 pl-10 bg-gray-800 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                                      className={`w-full p-2 pl-10 bg-gray-800 border rounded-lg focus:outline-none ${
                                         ahorrador.historialPagos[mes].pagado
                                           ? 'border-emerald-600 text-white'
                                           : 'border-gray-700 text-gray-400'
                                       }`}
                                       placeholder="0"
                                       min="0"
-                                      disabled={!ahorrador.historialPagos[mes].pagado}
+                                      disabled
                                     />
                                   </div>
                                   <div className="mt-2">

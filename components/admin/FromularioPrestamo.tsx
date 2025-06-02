@@ -53,7 +53,8 @@ export default function FormularioPrestamo({
   onGuardar,
   onCancelar,
 }: FormularioPrestamoProps) {
-  const [formData, setFormData] = useState<Prestamo>({
+  // Función para inicializar el estado del formulario
+  const inicializarFormData = () => ({
     id: prestamo?.id || "",
     nombreDeudor: prestamo?.nombreDeudor || "",
     cedula: prestamo?.cedula || "",
@@ -69,13 +70,32 @@ export default function FormularioPrestamo({
     historialPagos: prestamo?.historialPagos || {},
   });
 
+  const [formData, setFormData] = useState<Prestamo>(inicializarFormData());
+  
+  // Resetear el formulario cuando cambia el préstamo
+  useEffect(() => {
+    setFormData(inicializarFormData());
+  }, [prestamo?.id]);
+
   const [errores, setErrores] = useState<{ [key: string]: string }>({});
 
   // Calcular fecha de vencimiento automáticamente
   useEffect(() => {
     if (formData.fechaDesembolso && formData.plazoMeses > 0) {
       const fechaInicio = new Date(formData.fechaDesembolso);
-      fechaInicio.setMonth(fechaInicio.getMonth() + formData.plazoMeses);
+      // Asegurarse de que no exceda 10 años (120 meses)
+      const mesesValidos = Math.min(formData.plazoMeses, 120);
+      
+      // Si se ajustó el plazo, actualizarlo en el formulario
+      if (mesesValidos !== formData.plazoMeses) {
+        setFormData(prev => ({
+          ...prev,
+          plazoMeses: mesesValidos
+        }));
+        return;
+      }
+      
+      fechaInicio.setMonth(fechaInicio.getMonth() + mesesValidos);
       setFormData(prev => ({
         ...prev,
         fechaVencimiento: fechaInicio.toISOString().split('T')[0]
@@ -112,6 +132,8 @@ export default function FormularioPrestamo({
 
     if (formData.plazoMeses <= 0) {
       nuevosErrores.plazoMeses = "El plazo debe ser mayor a 0";
+    } else if (formData.plazoMeses > 120) {
+      nuevosErrores.plazoMeses = "El plazo máximo es de 120 meses (10 años)";
     }
 
     if (!formData.fechaDesembolso) {
@@ -125,7 +147,8 @@ export default function FormularioPrestamo({
   const calcularCuotaFija = (monto: number, plazoMeses: number, tasaInteres: number) => {
     const i = tasaInteres / 100;
     const cuota = monto * (i * Math.pow(1 + i, plazoMeses)) / (Math.pow(1 + i, plazoMeses) - 1);
-    return Math.round(cuota / 1000) * 1000;
+    // Redondear siempre hacia arriba a los miles más cercanos
+    return Math.ceil(cuota / 1000) * 1000;
   };
 
   const inicializarHistorialPagos = (plazoMeses: number, cuotaFija: number): HistorialPagos => {
@@ -147,22 +170,83 @@ export default function FormularioPrestamo({
       return;
     }
 
-    // Si es un préstamo nuevo y no tiene historial de pagos, inicializarlo
-    let prestamoCompleto = { ...formData };
+    // Crear una copia del préstamo actualizado
+    const prestamoActualizado: Prestamo = { ...formData };
     
-    if (!prestamo && (!prestamoCompleto.historialPagos || Object.keys(prestamoCompleto.historialPagos).length === 0)) {
-      const cuotaFija = calcularCuotaFija(
-        prestamoCompleto.monto,
-        prestamoCompleto.plazoMeses,
-        prestamoCompleto.tasaInteres
+    // Si es un préstamo existente y se está refinanciando
+    const esRefinanciacion = prestamo && 
+      (prestamo.monto !== formData.monto || 
+       prestamo.plazoMeses !== formData.plazoMeses ||
+       prestamo.tasaInteres !== formData.tasaInteres);
+    
+    // Calcular la nueva cuota
+    const nuevaCuota = calcularCuotaFija(
+      formData.monto,
+      formData.plazoMeses,
+      formData.tasaInteres
+    );
+    
+    if (esRefinanciacion && prestamo) {
+      // Mantener el historial de pagos existente y ajustar según el nuevo plazo
+      const pagosExistentes = prestamo.historialPagos || {};
+      const nuevoHistorial: HistorialPagos = {};
+      
+      // Determinar el número máximo de cuotas a copiar
+      const maxCuotas = Math.min(
+        Object.keys(pagosExistentes).length, 
+        formData.plazoMeses
       );
-      prestamoCompleto.historialPagos = inicializarHistorialPagos(
-        prestamoCompleto.plazoMeses,
-        cuotaFija
+      
+      // Copiar las cuotas existentes hasta el nuevo plazo
+      for (let i = 1; i <= maxCuotas; i++) {
+        if (pagosExistentes[i]) {
+          // Mantener el estado actual pero actualizar el monto de la cuota
+          nuevoHistorial[i] = {
+            ...pagosExistentes[i],
+            monto: nuevaCuota
+          };
+        }
+      }
+      
+      // Si el nuevo plazo es mayor, agregar las nuevas cuotas
+      if (formData.plazoMeses > maxCuotas) {
+        for (let i = maxCuotas + 1; i <= formData.plazoMeses; i++) {
+          nuevoHistorial[i] = { 
+            estado: "pendiente", 
+            monto: nuevaCuota,
+            subcuotas: []
+          };
+        }
+      }
+      
+      // Actualizar el préstamo con el nuevo historial
+      prestamoActualizado.historialPagos = nuevoHistorial;
+      prestamoActualizado.estado = "Refinanciado";
+    } else if (!prestamo) {
+      // Si es un préstamo nuevo, inicializar el historial de pagos
+      prestamoActualizado.historialPagos = inicializarHistorialPagos(
+        formData.plazoMeses,
+        nuevaCuota
       );
     }
-
-    onGuardar(prestamoCompleto);
+    
+    // Actualizar la cuota en el préstamo
+    prestamoActualizado.tasaInteres = formData.tasaInteres;
+    prestamoActualizado.plazoMeses = formData.plazoMeses;
+    prestamoActualizado.monto = formData.monto;
+    
+    // Si es un préstamo nuevo, establecer la fecha de vencimiento
+    if (!prestamo) {
+      const fechaVencimiento = new Date(formData.fechaDesembolso);
+      fechaVencimiento.setMonth(fechaVencimiento.getMonth() + formData.plazoMeses);
+      prestamoActualizado.fechaVencimiento = fechaVencimiento.toISOString().split('T')[0];
+    }
+    
+    // Llamar a la función de guardado
+    onGuardar(prestamoActualizado);
+    
+    // Cerrar el formulario
+    onCancelar();
   };
 
   const manejarCambio = (campo: keyof Prestamo, valor: any) => {
@@ -361,19 +445,35 @@ export default function FormularioPrestamo({
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Plazo (meses) *
                   </label>
-                  <input
-                    type="number"
-                    value={formData.plazoMeses || ""}
-                    onChange={(e) => manejarCambio("plazoMeses", Number(e.target.value))}
-                    className={`w-full p-3 bg-gray-800 border rounded-md focus:ring-2 focus:outline-none text-white ${
-                      errores.plazoMeses
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-gray-600 focus:ring-emerald-500"
-                    }`}
-                    placeholder="0"
-                    min="1"
-                    max="120"
-                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      id="plazoMeses"
+                      className={`w-full p-3 bg-gray-800 border rounded-md focus:ring-2 focus:outline-none text-white pr-32 ${
+                        errores.plazoMeses 
+                          ? "border-red-500 focus:ring-red-500" 
+                          : "border-gray-600 focus:ring-emerald-500"
+                      }`}
+                      value={formData.plazoMeses}
+                      onChange={(e) => {
+                        const valor = parseInt(e.target.value) || 0;
+                        // Limitar a 120 meses (10 años)
+                        manejarCambio('plazoMeses', Math.min(Math.max(1, valor), 120));
+                      }}
+                      min="1"
+                      max="120"
+                      step="1"
+                      placeholder="0"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-400">meses (máx. 120)</span>
+                    </div>
+                    {formData.plazoMeses > 0 && (
+                      <div className="text-sm text-gray-400 mt-1">
+                        {Math.floor(formData.plazoMeses / 12)} años y {formData.plazoMeses % 12} meses
+                      </div>
+                    )}
+                  </div>
                   {errores.plazoMeses && (
                     <p className="text-red-400 text-sm mt-1">{errores.plazoMeses}</p>
                   )}

@@ -47,7 +47,8 @@ interface PrestamoCardProps {
 function calcularCuotaFija(monto: number, plazoMeses: number, tasaInteres: number) {
   const i = tasaInteres / 100;
   const cuota = monto * (i * Math.pow(1 + i, plazoMeses)) / (Math.pow(1 + i, plazoMeses) - 1);
-  return Math.round(cuota / 1000) * 1000;
+  // Redondear siempre hacia arriba a los miles más cercanos
+  return Math.ceil(cuota / 1000) * 1000;
 }
 
 // Componente para mostrar las cuotas con fechas
@@ -62,22 +63,22 @@ function CuotasPrestamo({
   const cambiarEstadoCuota = async (numeroCuota: string, nuevoEstado: EstadoCuota) => {
     const nuevoHistorial = { ...prestamo.historialPagos };
     const fechaActual = new Date().toISOString();
-    
+
     if (numeroCuota.includes(".")) {
       // Es una subcuota
       const [num, sub] = numeroCuota.split(".");
       const subcuotas = nuevoHistorial[num].subcuotas.map(sq => {
         if (sq.numero === numeroCuota) {
           const subcuotaActualizada = { ...sq, estado: nuevoEstado };
-          
-          // Agregar fecha según el estado
+
           if (nuevoEstado === "pagado") {
             subcuotaActualizada.fecha_pago = fechaActual;
+          } else if (nuevoEstado === "aplazado") {
+            delete subcuotaActualizada.fecha_pago;
           } else if (nuevoEstado === "pendiente") {
-            // Limpiar fechas si vuelve a pendiente
             delete subcuotaActualizada.fecha_pago;
           }
-          
+
           return subcuotaActualizada;
         }
         return sq;
@@ -89,39 +90,39 @@ function CuotasPrestamo({
         const subNumero = `${numeroCuota}.1`;
         nuevoHistorial[numeroCuota].estado = "aplazado";
         nuevoHistorial[numeroCuota].fecha_aplazamiento = fechaActual;
-        
+        delete nuevoHistorial[numeroCuota].fecha_pago; // <-- Elimina fecha de pago si la hay
+
         // Crear subcuota si no existe
         const subcuotaExiste = nuevoHistorial[numeroCuota].subcuotas.find(
           sc => sc.numero === subNumero
         );
-        
+
         if (!subcuotaExiste) {
           nuevoHistorial[numeroCuota].subcuotas.push({
             numero: subNumero,
             estado: "pendiente",
-            monto: Math.round(nuevoHistorial[numeroCuota].monto / 2 / 1000) * 1000,
+            monto: Math.ceil(nuevoHistorial[numeroCuota].monto / 1000) * 1000,
             fecha_creacion: fechaActual,
           });
         }
       } else {
         nuevoHistorial[numeroCuota].estado = nuevoEstado;
-        
-        // Agregar fecha según el estado
+
         if (nuevoEstado === "pagado") {
           nuevoHistorial[numeroCuota].fecha_pago = fechaActual;
+          delete nuevoHistorial[numeroCuota].fecha_aplazamiento;
         } else if (nuevoEstado === "pendiente") {
-          // Limpiar fechas si vuelve a pendiente
           delete nuevoHistorial[numeroCuota].fecha_pago;
           delete nuevoHistorial[numeroCuota].fecha_aplazamiento;
         }
       }
     }
-    
+
     const prestamoActualizado = {
       ...prestamo,
       historialPagos: nuevoHistorial,
     };
-    
+
     await onUpdateCuota(prestamoActualizado);
   };
 

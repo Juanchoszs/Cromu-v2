@@ -32,148 +32,180 @@ const calcularCuotaMensual = (prestamo: Prestamo) => {
   return Math.ceil(cuotaExacta / 1000) * 1000;
 };
 
-// Función para generar la tabla de amortización
+// Función para generar la tabla de amortización con método francés
 const generarTablaAmortizacion = (prestamo: Prestamo) => {
-  const monto = prestamo.monto;
+  const tabla: any[] = [];
+  let saldoPendiente = prestamo.monto;
   const tasaMensual = prestamo.tasaInteres / 100;
-  const plazo = prestamo.plazoMeses;
-  const cuotaMensual = calcularCuotaMensual(prestamo);
+  
+  // Calcular la cuota fija con el método francés
+  const cuotaFija = calcularCuotaMensual(prestamo);
+  
+  // Primero, generamos la tabla teórica sin considerar pagos ni subcuotas
+  const tablaTeorica: Array<{
+    mes: number;
+    saldoInicial: number;
+    interes: number;
+    abonoCapital: number;
+    saldoFinal: number;
+  }> = [];
 
-  const tabla = [];
-  let saldoPendiente = monto;
+  // Calcular la tabla teórica
+  for (let mes = 1; mes <= prestamo.plazoMeses; mes++) {
+    const saldoInicial = mes === 1 
+      ? prestamo.monto 
+      : tablaTeorica[mes - 2].saldoFinal;
+    
+    const interes = saldoInicial * tasaMensual;
+    
+    // Asegurarnos de que en la última cuota el saldo final sea 0
+    const esUltimaCuota = mes === prestamo.plazoMeses;
+    const abonoCapital = esUltimaCuota 
+      ? saldoInicial // En la última cuota, el abono a capital es todo el saldo pendiente
+      : Math.min(cuotaFija - interes, saldoInicial);
+      
+    const saldoFinal = saldoInicial - abonoCapital;
+    
+    tablaTeorica.push({
+      mes,
+      saldoInicial,
+      interes,
+      abonoCapital,
+      saldoFinal
+    });
+  }
 
-  for (let mes = 1; mes <= plazo; mes++) {
-    const interesMes = saldoPendiente * tasaMensual;
-    const abonoCapital = cuotaMensual - interesMes;
-    let cuotaOriginal = {
-      cuota: Math.ceil(cuotaMensual / 1000) * 1000,
-      interes: Math.ceil(interesMes / 1000) * 1000,
-      abonoCapital: Math.ceil(abonoCapital / 1000) * 1000,
-      saldo: Math.ceil((saldoPendiente - abonoCapital < 0 ? 0 : saldoPendiente - abonoCapital) / 1000) * 1000,
-    };
-
-    // Leer estado real de la cuota desde historialPagos
-    let estado = "Pendiente";
-    let fechaPago = "";
-
+  // Ahora procesamos los pagos reales y subcuotas
+  let saldoActual = prestamo.monto;
+  
+  for (let mes = 1; mes <= prestamo.plazoMeses; mes++) {
     const cuotaHistorial = prestamo.historialPagos?.[mes];
-    if (cuotaHistorial) {
-      if (cuotaHistorial.estado === "pagado") {
-        estado = "Pagado";
-        fechaPago = cuotaHistorial.fecha_pago
-          ? new Date(cuotaHistorial.fecha_pago).toLocaleDateString("es-ES")
-          : "";
-      } else if (cuotaHistorial.estado === "aplazado") {
-        estado = "Aplazado";
-      } else {
-        estado = "Pendiente";
-      }
-    } else {
-      // Calcular si está vencida
-      const fechaDesembolso = new Date(prestamo.fechaDesembolso);
-      const fechaVencimientoCuota = new Date(fechaDesembolso);
-      fechaVencimientoCuota.setMonth(fechaDesembolso.getMonth() + mes);
-
-      if (fechaVencimientoCuota < new Date()) {
-        estado = "Vencido";
-      }
-    }
-
-    // Si la cuota está aplazada, pushea todo en 0
-    if (estado === "Aplazado") {
+    const esAplazado = cuotaHistorial?.estado === 'aplazado';
+    const esPagado = cuotaHistorial?.estado === 'pagado';
+    const tieneSubcuotas = cuotaHistorial?.subcuotas && Array.isArray(cuotaHistorial.subcuotas) && cuotaHistorial.subcuotas.length > 0;
+    
+    const filaTeorica = tablaTeorica[mes - 1];
+    
+    if (esAplazado && tieneSubcuotas) {
+      // Procesar cuota aplazada con subcuotas
+      const subcuotas = [...(cuotaHistorial.subcuotas || [])];
+      let saldoCuota = filaTeorica.saldoInicial;
+      
+      // Agregar la fila principal de la cuota aplazada
       tabla.push({
         mes: mes.toString(),
-        cuota: 0,
+        cuota: 0, // No se paga la cuota completa, solo subcuotas
         interes: 0,
         abonoCapital: 0,
-        saldo: Math.ceil((saldoPendiente < 0 ? 0 : saldoPendiente) / 1000) * 1000,
-        estado,
-        fechaPago
+        saldo: Math.ceil(saldoCuota / 1000) * 1000,
+        estado: 'Aplazado',
+        fechaPago: cuotaHistorial.fecha_aplazamiento 
+          ? new Date(cuotaHistorial.fecha_aplazamiento).toLocaleDateString('es-ES')
+          : ''
       });
-
-      // Si hay subcuotas, la primera toma los valores originales
-      if (cuotaHistorial && Array.isArray(cuotaHistorial.subcuotas)) {
-        cuotaHistorial.subcuotas.forEach((sub, idx) => {
-          let subCuotaValores;
-          if (idx === 0) {
-            // La primera subcuota toma los valores originales
-            subCuotaValores = {
-              cuota: cuotaOriginal.cuota,
-              interes: cuotaOriginal.interes,
-              abonoCapital: cuotaOriginal.abonoCapital,
-              saldo: cuotaOriginal.saldo,
-            };
-            saldoPendiente -= abonoCapital; // Solo descontar una vez
-          } else {
-            // Las siguientes subcuotas calculan normalmente
-            const interesSub = saldoPendiente * tasaMensual;
-            const abonoCapitalSub = cuotaMensual - interesSub;
-            saldoPendiente -= abonoCapitalSub;
-            subCuotaValores = {
-              cuota: Math.ceil(cuotaMensual / 1000) * 1000,
-              interes: Math.ceil(interesSub / 1000) * 1000,
-              abonoCapital: Math.ceil(abonoCapitalSub / 1000) * 1000,
-              saldo: Math.ceil((saldoPendiente < 0 ? 0 : saldoPendiente) / 1000) * 1000,
-            };
-          }
-
-          tabla.push({
-            mes: `${mes}.${idx + 1}`,
-            ...subCuotaValores,
-            estado:
-              sub.estado === "pagado"
-                ? "Pagado"
-                : sub.estado === "aplazado"
-                ? "Aplazado"
-                : "Pendiente",
-            fechaPago: sub.estado === "pagado" && sub.fecha_pago
-              ? new Date(sub.fecha_pago).toLocaleDateString("es-ES")
-              : ""
-          });
+      
+      // Procesar cada subcuota
+      subcuotas.forEach((subcuota, idx) => {
+        const interes = saldoCuota * tasaMensual;
+        const abonoCapital = Math.min(cuotaFija - interes, saldoCuota);
+        const nuevoSaldo = Math.max(0, saldoCuota - (subcuota.estado === 'pagado' ? abonoCapital : 0));
+        
+        tabla.push({
+          mes: `${mes}.${idx + 1}`,
+          cuota: cuotaFija,
+          interes: Math.ceil(interes / 1000) * 1000,
+          abonoCapital: subcuota.estado === 'pagado' ? Math.ceil(abonoCapital / 1000) * 1000 : 0,
+          saldo: Math.ceil(nuevoSaldo / 1000) * 1000,
+          estado: subcuota.estado === 'pagado' ? 'Pagado' : 'Pendiente',
+          fechaPago: subcuota.fecha_pago 
+            ? new Date(subcuota.fecha_pago).toLocaleDateString('es-ES')
+            : ''
         });
-      }
-    } else {
-      // Si no está aplazada, comportamiento normal
-      saldoPendiente -= abonoCapital;
+        
+        if (subcuota.estado === 'pagado') {
+          saldoCuota = nuevoSaldo;
+          saldoActual = nuevoSaldo;
+        }
+      });
+      
+    } else if (esPagado) {
+      // Cuota pagada normalmente
+      const interes = filaTeorica.interes;
+      const abonoCapital = filaTeorica.abonoCapital;
+      
       tabla.push({
         mes: mes.toString(),
-        cuota: cuotaOriginal.cuota,
-        interes: cuotaOriginal.interes,
-        abonoCapital: cuotaOriginal.abonoCapital,
-        saldo: cuotaOriginal.saldo,
-        estado,
-        fechaPago
+        cuota: cuotaFija,
+        interes: Math.ceil(interes / 1000) * 1000,
+        abonoCapital: Math.ceil(abonoCapital / 1000) * 1000,
+        saldo: Math.ceil(filaTeorica.saldoFinal / 1000) * 1000,
+        estado: 'Pagado',
+        fechaPago: cuotaHistorial.fecha_pago 
+          ? new Date(cuotaHistorial.fecha_pago).toLocaleDateString('es-ES')
+          : ''
       });
-
-      // Subcuotas normales
-      if (cuotaHistorial && Array.isArray(cuotaHistorial.subcuotas)) {
-        cuotaHistorial.subcuotas.forEach((sub, idx) => {
-          const interesSub = saldoPendiente * tasaMensual;
-          const abonoCapitalSub = cuotaMensual - interesSub;
-          saldoPendiente -= abonoCapitalSub;
-
-          tabla.push({
-            mes: `${mes}.${idx + 1}`,
-            cuota: Math.ceil(cuotaMensual / 1000) * 1000,
-            interes: Math.ceil(interesSub / 1000) * 1000,
-            abonoCapital: Math.ceil(abonoCapitalSub / 1000) * 1000,
-            saldo: Math.ceil((saldoPendiente < 0 ? 0 : saldoPendiente) / 1000) * 1000,
-            estado:
-              sub.estado === "pagado"
-                ? "Pagado"
-                : sub.estado === "aplazado"
-                ? "Aplazado"
-                : "Pendiente",
-            fechaPago: sub.estado === "pagado" && sub.fecha_pago
-              ? new Date(sub.fecha_pago).toLocaleDateString("es-ES")
-              : ""
-          });
-        });
+      
+      saldoActual = filaTeorica.saldoFinal;
+      
+    } else {
+      // Cuota pendiente
+      const esUltimaCuota = mes === prestamo.plazoMeses;
+      const interes = filaTeorica.interes;
+      const abonoCapital = esUltimaCuota 
+        ? filaTeorica.saldoInicial  // En la última cuota, el abono a capital es todo el saldo
+        : filaTeorica.abonoCapital;
+      
+      const saldoMostrar = esUltimaCuota 
+        ? 0  // En la última cuota, el saldo debe ser 0
+        : Math.max(0, filaTeorica.saldoInicial - (mes > 1 ? filaTeorica.abonoCapital : 0));
+      
+      tabla.push({
+        mes: mes.toString(),
+        cuota: esUltimaCuota 
+          ? Math.ceil((interes + abonoCapital) / 1000) * 1000  // Ajustar la última cuota
+          : cuotaFija,
+        interes: Math.ceil(interes / 1000) * 1000,
+        abonoCapital: Math.ceil(abonoCapital / 1000) * 1000,
+        saldo: Math.ceil(saldoMostrar / 1000) * 1000,
+        estado: 'Pendiente',
+        fechaPago: ''
+      });
+    }
+  }
+  
+  // Asegurarnos de que la última cuota tenga saldo 0
+  if (tabla.length > 0) {
+    const ultimaFila = tabla[tabla.length - 1];
+    if (parseInt(ultimaFila.mes) === prestamo.plazoMeses && !ultimaFila.mes.includes('.')) {
+      ultimaFila.saldo = 0;
+      // Ajustar el abono a capital para que el saldo llegue a 0
+      if (ultimaFila.estado === 'Pendiente' || ultimaFila.estado === 'Vencido') {
+        ultimaFila.abonoCapital = ultimaFila.saldoInicial || 0;
+        ultimaFila.cuota = Math.ceil((ultimaFila.interes + ultimaFila.abonoCapital) / 1000) * 1000;
       }
     }
   }
-
-  return tabla;
+  
+  // Ordenar la tabla por mes (considerando subcuotas)
+  return tabla.sort((a, b) => {
+    // Si ambos son números enteros
+    if (!a.mes.includes('.') && !b.mes.includes('.')) {
+      return parseInt(a.mes) - parseInt(b.mes);
+    }
+    // Si uno es subcuota y el otro no
+    if (a.mes.includes('.') && !b.mes.includes('.')) {
+      const [mesA] = a.mes.split('.').map(Number);
+      return mesA - parseInt(b.mes) || 1; // Las subcuotas van después
+    }
+    if (!a.mes.includes('.') && b.mes.includes('.')) {
+      const [mesB] = b.mes.split('.').map(Number);
+      return parseInt(a.mes) - mesB || -1; // Las subcuotas van después
+    }
+    // Si ambos son subcuotas
+    const [mesA, subA] = a.mes.split('.').map(Number);
+    const [mesB, subB] = b.mes.split('.').map(Number);
+    return mesA - mesB || (subA - subB);
+  });
 };
 
 // Función para obtener datos para el gráfico de distribución

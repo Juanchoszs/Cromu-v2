@@ -77,6 +77,7 @@ export default function Login() {
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify(formData),
       });
 
@@ -86,15 +87,16 @@ export default function Login() {
         throw new Error(data.error || t(translations).loginError);
       }
 
-      // Save cedula to sessionStorage for regular users
-      if (!data.isAdmin) {
-        sessionStorage.setItem("cedulaAhorrador", formData.cedula);
-      }
+      // Obtener el parámetro de redirección de la URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get('from') || urlParams.get('redirect');
 
-      // Redirigir según el tipo de usuario
       if (data.isAdmin) {
-        window.location.href = "/admin";
+        // For admin, redirect to admin page or the specified redirect URL
+        window.location.href = redirectTo || "/admin";
       } else {
+        // For regular users, save cedula and redirect to user dashboard
+        sessionStorage.setItem("cedulaAhorrador", formData.cedula);
         window.location.href = "/usuario";
       }
     } catch (err) {

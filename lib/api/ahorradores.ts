@@ -222,6 +222,10 @@ export async function actualizarAhorrador(id: string, datos: Partial<AhorradorDa
       setClauses.push(`incentivo_por_fidelidad = $${paramIndex++}`);
       values.push(datos.incentivoPorFidelidad);
     }
+    if (datos.fechaIngreso !== undefined) {
+      setClauses.push(`fecha_ingreso = $${paramIndex++}`);
+      values.push(datos.fechaIngreso);
+    }
     
     setClauses.push(`actualizado_en = CURRENT_TIMESTAMP`);
     values.push(id);
