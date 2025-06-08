@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Save, X, DollarSign, User, Calendar, Percent } from "lucide-react";
 
-export type EstadoPrestamo = "Activo" | "Pagado" | "Vencido" | "Refinanciado";
+export type EstadoPrestamo = "Activo" | "Pagado" | "Vencido" | "Refinanciado" | "En mora" | "Aprobado" | "Pendiente" | "Rechazado";
 
 type EstadoCuota = "pendiente" | "pagado" | "aplazado";
 

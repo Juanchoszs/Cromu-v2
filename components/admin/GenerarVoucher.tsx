@@ -54,6 +54,39 @@ function calcularInteresYSaldoSimple(ahorrador: Ahorrador) {
   };
 }
 
+// Calcula la rentabilidad mensual acumulada y el interés real generado
+function calcularRentabilidadAcumulada(ahorrador: Ahorrador) {
+  const mesesOrdenados = Object.keys(ahorrador.historialPagos).sort();
+  let saldoAcumulado = 0;
+  let interesAcumulado = 0;
+  let rentabilidadAcumulada = 0;
+  let mesesPagados = 0;
+
+  // Sumar 0.5% por cada mes transcurrido desde el ingreso, siempre que haya algún pago después de ese mes
+  mesesOrdenados.forEach((mes, idx) => {
+    // ¿El usuario sigue en el fondo este mes? (hay algún pago después de este mes)
+    const hayPagosDespues = mesesOrdenados.slice(idx).some(m => ahorrador.historialPagos[m].pagado);
+    if (hayPagosDespues) {
+      rentabilidadAcumulada += 0.5;
+    }
+    const pago = ahorrador.historialPagos[mes];
+    if (pago.pagado) {
+      mesesPagados++;
+      const interesMes = saldoAcumulado * 0.005; // 0.5% mensual
+      interesAcumulado += interesMes;
+      saldoAcumulado += pago.monto + interesMes;
+    }
+  });
+
+  return {
+    rentabilidadAcumulada, // Porcentaje total acumulado
+    interesAcumulado: Math.round(interesAcumulado),
+    saldoAcumulado: Math.round(saldoAcumulado),
+    mesesPagados,
+    ahorroTotal: saldoAcumulado - interesAcumulado
+  };
+}
+
 
 // Función para obtener datos para el gráfico
 const obtenerDatosGrafico = (ahorrador: Ahorrador) => {
@@ -109,7 +142,11 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
   
   const rentabilidadAnual = calcularRentabilidadAnual(ahorrador);
   const { interesTotal, interesMensual, tasaAnual, tasaMensual, ahorroTotal } = calcularInteresYSaldoSimple(ahorrador);
+  const rentabilidad = calcularRentabilidadAcumulada(ahorrador);
   
+  // NUEVO: Calcula rentabilidad acumulada igual que en el CRUD
+  const rentabilidadAcumulada = calcularRentabilidadAcumulada(ahorrador);
+
   // Referencias para los gráficos y contenedor del PDF
   const graficoAhorroRef = useRef<HTMLCanvasElement>(null);
   const graficoPagosRef = useRef<HTMLCanvasElement>(null);
@@ -201,7 +238,7 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
                   }
                 }
               }
-            });
+             });
             }
           }
         
@@ -262,8 +299,8 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
                     }
                   }
                 }
-              }
-            });
+            }
+           });
           }
         }
         
@@ -487,44 +524,44 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
               <h3 className="font-semibold text-lg mb-2 text-black">Resumen de Ahorro</h3>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Columna 1: Rentabilidad Mensual */}
+                  {/* Columna 1: Rentabilidad Acumulada */}
                   <div>
-                    <h4 className="font-semibold text-black mb-2">Rentabilidad Mensual</h4>
+                    <h4 className="font-semibold text-black mb-2">Rentabilidad Acumulada</h4>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-black font-medium">% Mensual:</span>
-                      <span className="font-bold text-black">{tasaMensual.toFixed(2)}%</span>
-                    </div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-black font-medium">Interés Mensual Aproximado:</span>
-                      <span className="font-bold text-black">{formatearMoneda(interesMensual)}</span>
-                    </div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-black font-medium">Ahorro Total:</span>
-                      <span className="font-bold text-black">{formatearMoneda(ahorroTotal)}</span>
-                    </div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-black font-medium">Saldo Total:</span>
-                      <span className="font-bold text-black">{formatearMoneda(ahorroTotal + interesMensual)}</span>
-                    </div>
-                  </div>
-                  {/* Columna 2: Rentabilidad Anual */}
-                  <div>
-                    <h4 className="font-semibold text-black mb-2">Rentabilidad Anual</h4>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-black font-medium">% Anual:</span>
-                      <span className="font-bold text-black">{tasaAnual.toFixed(2)}%</span>
+                      <span className="text-sm text-black font-medium">% Acumulado:</span>
+                      <span className="font-bold text-black">{rentabilidadAcumulada.rentabilidadAcumulada.toFixed(2)}%</span>
                     </div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm text-black font-medium">Interés Generado:</span>
-                      <span className="font-bold text-black">{formatearMoneda(interesTotal)}</span>
+                      <span className="font-bold text-black">
+                        {formatearMoneda(rentabilidadAcumulada.ahorroTotal * (rentabilidadAcumulada.rentabilidadAcumulada / 100))}
+                      </span>
                     </div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm text-black font-medium">Ahorro Total:</span>
-                      <span className="font-bold text-black">{formatearMoneda(ahorroTotal)}</span>
+                      <span className="font-bold text-black">{formatearMoneda(rentabilidadAcumulada.ahorroTotal)}</span>
                     </div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm text-black font-medium">Saldo Total:</span>
-                      <span className="font-bold text-black">{formatearMoneda(ahorroTotal + interesTotal)}</span>
+                      <span className="font-bold text-black">
+                        {formatearMoneda(rentabilidadAcumulada.ahorroTotal + (rentabilidadAcumulada.ahorroTotal * (rentabilidadAcumulada.rentabilidadAcumulada / 100)))}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Columna 2: Detalle */}
+                  <div>
+                    <h4 className="font-semibold text-black mb-2">Detalle</h4>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-black font-medium">Meses Pagados:</span>
+                      <span className="font-bold text-black">{rentabilidadAcumulada.mesesPagados}</span>
+                    </div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-black font-medium">Rentabilidad por mes:</span>
+                      <span className="font-bold text-black">0.50%</span>
+                    </div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-black font-medium">Rentabilidad máxima posible:</span>
+                      <span className="font-bold text-black">{(Object.keys(ahorrador.historialPagos).length * 0.5).toFixed(2)}%</span>
                     </div>
                   </div>
                 </div>

@@ -109,92 +109,84 @@ export function UserLoans({ fullView = false }: { fullView?: boolean }) {
   return (
     <>
       {prestamos.map((prestamo) => (
-        <Card className="w-full h-full mb-6" key={prestamo.id}>
+        <Card className="w-full h-full mb-6 shadow-lg border-blue-100 dark:border-blue-900" key={prestamo.id}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-emerald-600" />
+            <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400 text-xl font-bold">
+              <CreditCard className="h-6 w-6" />
               Préstamo
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="font-medium">Nombre:</span>
-                <span>{prestamo.nombreDeudor}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Cédula:</span>
-                <span>{prestamo.cedula}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Monto:</span>
-                <span>{formatearMoneda(prestamo.monto)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Plazo:</span>
-                <span>{prestamo.plazoMeses} meses</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Tasa de interés:</span>
-                <span>{prestamo.tasaInteres}% mensual</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Estado:</span>
-                <span>{prestamo.estado}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Fecha desembolso:</span>
-                <span>{formatearFecha(prestamo.fechaDesembolso)}</span>
-              </div>
-              {prestamo.fechaVencimiento && (
-                <div className="flex justify-between">
-                  <span className="font-medium">Fecha vencimiento:</span>
-                  <span>{formatearFecha(prestamo.fechaVencimiento)}</span>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-gray-500 dark:text-gray-400 text-xs">Nombre:</div>
+                <div className="font-semibold">{prestamo.nombreDeudor}</div>
+                <div className="text-gray-500 dark:text-gray-400 text-xs">Cédula:</div>
+                <div className="font-semibold">{prestamo.cedula}</div>
+                <div className="text-gray-500 dark:text-gray-400 text-xs">Monto:</div>
+                <div className="font-bold text-blue-700 dark:text-blue-300">{formatearMoneda(prestamo.monto)}</div>
+                <div className="text-gray-500 dark:text-gray-400 text-xs">Plazo:</div>
+                <div className="font-semibold">{prestamo.plazoMeses} meses</div>
+                <div className="text-gray-500 dark:text-gray-400 text-xs">Tasa de interés:</div>
+                <div className="font-semibold">{prestamo.tasaInteres}% mensual</div>
+                <div className="text-gray-500 dark:text-gray-400 text-xs">Estado:</div>
+                <div>
+                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold
+                    ${prestamo.estado.toLowerCase() === "activo"
+                      ? "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200"
+                      : "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    }`}>
+                    {prestamo.estado}
+                  </span>
                 </div>
-              )}
+                <div className="text-gray-500 dark:text-gray-400 text-xs">Fecha desembolso:</div>
+                <div className="font-semibold">{formatearFecha(prestamo.fechaDesembolso)}</div>
+                {prestamo.fechaVencimiento && (
+                  <>
+                    <div className="text-gray-500 dark:text-gray-400 text-xs">Fecha vencimiento:</div>
+                    <div className="font-semibold">{formatearFecha(prestamo.fechaVencimiento)}</div>
+                  </>
+                )}
+              </div>
             </div>
             {/* Historial de pagos si existe */}
             {prestamo.historialPagos && (
               <div className="mt-6">
-                <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400 mb-2">Historial de cuotas</h3>
-                <div className="rounded-lg bg-gray-100 dark:bg-gray-800 p-3 max-h-64 overflow-y-auto">
-                  {Object.keys(prestamo.historialPagos).length === 0 ? (
-                    <div className="text-gray-400 text-center">No hay cuotas registradas.</div>
-                  ) : (
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr>
-                          <th className="text-left py-1 px-2">Mes</th>
-                          <th className="text-left py-1 px-2">Monto</th>
-                          <th className="text-left py-1 px-2">Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.entries(prestamo.historialPagos)
-                          .sort(([a,], [b,]) => Number(a) - Number(b))
-                          .flatMap(([mes, pagos]) => {
-                            const pagosArray = Array.isArray(pagos) ? pagos : pagos ? [pagos] : [];
-                            return pagosArray.map((pago, idx) => (
-                              <tr key={mes + idx} className="border-b border-gray-200 dark:border-gray-700">
-                                <td className="py-1 px-2">{mes}</td>
-                                <td className="py-1 px-2">{pago.monto !== undefined ? formatearMoneda(pago.monto) : "-"}</td>
-                                <td className="py-1 px-2">
-                                  {pago.estado === "aplazado" || pago.estado === "Aplazado" ? (
-                                    <span className="text-orange-600 dark:text-orange-400 font-medium">Aplazado</span>
-                                  ) : pago.estado === "pagado" || pago.pagado === true ? (
-                                    <span className="text-green-600 dark:text-green-400 font-medium">Pagado</span>
-                                  ) : pago.estado === "pendiente" || pago.pagado === false ? (
-                                    <span className="text-yellow-600 dark:text-yellow-400 font-medium">Pendiente</span>
-                                  ) : (
-                                    pago.estado || "-"
-                                  )}
-                                </td>
-                              </tr>
-                            ));
-                          })}
-                      </tbody>
-                    </table>
-                  )}
+                <h3 className="text-base font-semibold text-blue-700 dark:text-blue-400 mb-2">Historial de cuotas</h3>
+                <div className="w-full overflow-x-auto rounded-lg bg-gray-50 dark:bg-gray-800 p-3 shadow-inner">
+                  <table className="min-w-[600px] w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="text-left py-1 px-2 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">Mes</th>
+                        <th className="text-left py-1 px-2 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">Monto</th>
+                        <th className="text-left py-1 px-2 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(prestamo.historialPagos)
+                        .sort(([a,], [b,]) => Number(a) - Number(b))
+                        .flatMap(([mes, pagos]) => {
+                          const pagosArray = Array.isArray(pagos) ? pagos : pagos ? [pagos] : [];
+                          return pagosArray.map((pago, idx) => (
+                            <tr key={mes + idx} className="border-b border-gray-200 dark:border-gray-700">
+                              <td className="py-1 px-2 whitespace-nowrap">{mes}</td>
+                              <td className="py-1 px-2 font-medium whitespace-nowrap">{pago.monto !== undefined ? formatearMoneda(pago.monto) : "-"}</td>
+                              <td className="py-1 px-2 whitespace-nowrap">
+                                {pago.estado === "aplazado" || pago.estado === "Aplazado" ? (
+                                  <span className="text-orange-600 dark:text-orange-400 font-medium">Aplazado</span>
+                                ) : pago.estado === "pagado" || pago.pagado === true ? (
+                                  <span className="text-green-600 dark:text-green-400 font-medium">Pagado</span>
+                                ) : pago.estado === "pendiente" || pago.pagado === false ? (
+                                  <span className="text-yellow-600 dark:text-yellow-400 font-medium">Pendiente</span>
+                                ) : (
+                                  pago.estado || "-"
+                                )}
+                              </td>
+                            </tr>
+                          ));
+                        })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}

@@ -69,7 +69,7 @@ export default function TrustSection() {
 
               <div className="bg-emerald-50 dark:bg-gray-800 p-3 md:p-4 rounded-lg">
                 <div className="flex items-end justify-center md:justify-start gap-1 md:gap-2">
-                  <CountUpAnimation end={300} duration={4} />
+                  <CountUpAnimation end={1500} duration={4} />
                   <span className="text-emerald-700 dark:text-emerald-400 font-bold">+</span>
                 </div>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
@@ -79,7 +79,7 @@ export default function TrustSection() {
 
               <div className="bg-emerald-50 dark:bg-gray-800 p-3 md:p-4 rounded-lg">
                 <div className="flex items-end justify-center md:justify-start gap-1 md:gap-2">
-                  <CountUpAnimation end={200} duration={4} />
+                  <CountUpAnimation end={1000} duration={4} />
                   <span className="text-emerald-700 dark:text-emerald-400 font-bold">+</span>
                 </div>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">

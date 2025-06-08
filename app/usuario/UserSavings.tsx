@@ -87,71 +87,67 @@ export function UserSavings({ fullView = false }: { fullView?: boolean }) {
 
   return (
     <>
-      <Card className="w-full h-full">
+      <Card className="w-full h-full shadow-lg border-emerald-100 dark:border-emerald-900">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PiggyBank className="h-5 w-5 text-emerald-600" />
+          <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 text-xl font-bold">
+            <PiggyBank className="h-6 w-6" />
             Ahorros
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="font-medium">Nombre:</span>
-              <span>{ahorrador.nombre}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Cédula:</span>
-              <span>{ahorrador.cedula}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Ahorro total:</span>
-              <span>${ahorrador.ahorroTotal.toLocaleString("es-CO")}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Pagos consecutivos:</span>
-              <span>{ahorrador.pagosConsecutivos}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Incentivo por fidelidad:</span>
-              <span>{ahorrador.incentivoPorFidelidad ? "Sí" : "No"}</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="text-gray-500 dark:text-gray-400 text-xs">Nombre:</div>
+              <div className="font-semibold">{ahorrador.nombre}</div>
+              <div className="text-gray-500 dark:text-gray-400 text-xs">Cédula:</div>
+              <div className="font-semibold">{ahorrador.cedula}</div>
+              <div className="text-gray-500 dark:text-gray-400 text-xs">Ahorro total:</div>
+              <div className="font-bold text-emerald-700 dark:text-emerald-300">
+                ${ahorrador.ahorroTotal.toLocaleString("es-CO")}
+              </div>
+              <div className="text-gray-500 dark:text-gray-400 text-xs">Pagos consecutivos:</div>
+              <div className="font-semibold">{ahorrador.pagosConsecutivos}</div>
+              <div className="text-gray-500 dark:text-gray-400 text-xs">Incentivo por fidelidad:</div>
+              <div>
+                {ahorrador.incentivoPorFidelidad ? (
+                  <span className="inline-block bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200 px-2 py-0.5 rounded text-xs font-semibold">Sí</span>
+                ) : (
+                  <span className="inline-block bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 px-2 py-0.5 rounded text-xs font-semibold">No</span>
+                )}
+              </div>
             </div>
           </div>
           <div className="mt-6">
-            <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-400 mb-2">Historial de pagos</h3>
-            <div className="rounded-lg bg-gray-100 dark:bg-gray-800 p-3 max-h-64 overflow-y-auto">
-              {Object.keys(ahorrador.historialPagos).length === 0 ? (
-                <div className="text-gray-400 text-center">No hay pagos registrados.</div>
-              ) : (
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="text-left py-1 px-2">Mes</th>
-                      <th className="text-left py-1 px-2">Monto</th>
-                      <th className="text-left py-1 px-2">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(ahorrador.historialPagos)
-                      .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([mes, pago]) => (
-                        <tr key={mes} className="border-b border-gray-200 dark:border-gray-700">
-                          <td className="py-1 px-2">{mes}</td>
-                          <td className="py-1 px-2">
-                            ${pago.monto.toLocaleString("es-CO")}
-                          </td>
-                          <td className="py-1 px-2">
-                            {pago.pagado ? (
-                              <span className="text-green-600 dark:text-green-400 font-medium">Pagado</span>
-                            ) : (
-                              <span className="text-yellow-600 dark:text-yellow-400 font-medium">Pendiente</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              )}
+            <h3 className="text-base font-semibold text-emerald-700 dark:text-emerald-400 mb-2">Historial de pagos</h3>
+            <div className="w-full overflow-x-auto rounded-lg bg-gray-50 dark:bg-gray-800 p-3 shadow-inner">
+              <table className="min-w-[500px] w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className="text-left py-1 px-2 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">Mes</th>
+                    <th className="text-left py-1 px-2 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">Monto</th>
+                    <th className="text-left py-1 px-2 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(ahorrador.historialPagos)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([mes, pago]) => (
+                      <tr key={mes} className="border-b border-gray-200 dark:border-gray-700">
+                        <td className="py-1 px-2 whitespace-nowrap">{mes}</td>
+                        <td className="py-1 px-2 font-medium whitespace-nowrap">
+                          ${pago.monto.toLocaleString("es-CO")}
+                        </td>
+                        <td className="py-1 px-2 whitespace-nowrap">
+                          {pago.pagado ? (
+                            <span className="text-green-600 dark:text-green-400 font-medium">Pagado</span>
+                          ) : (
+                            <span className="text-yellow-600 dark:text-yellow-400 font-medium">Pendiente</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </CardContent>

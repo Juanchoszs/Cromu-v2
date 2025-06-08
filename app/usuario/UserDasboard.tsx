@@ -115,64 +115,69 @@ export function UserDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Mi Panel Financiero
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Cédula: {cedula}
-          </p>
+        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-1 tracking-tight">
+              Mi Panel Financiero
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Cédula: <span className="font-semibold">{cedula}</span>
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
+              Cliente activo
+            </Badge>
+          </div>
         </div>
 
         {/* Resumen estadístico */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+          <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Total Ahorrado
                   </p>
-                  <p className="text-2xl font-bold text-emerald-600">
+                  <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
                     {formatearMoneda(dashboardData.totalAhorrado)}
                   </p>
                 </div>
-                <PiggyBank className="h-8 w-8 text-emerald-600" />
+                <PiggyBank className="h-8 w-8 text-emerald-500" />
               </div>
             </CardContent>
           </Card>
-
-          <Card>
+          <Card className="shadow-lg border-blue-100 dark:border-blue-900">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Total Prestado
                   </p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">
                     {formatearMoneda(dashboardData.totalPrestado)}
                   </p>
                 </div>
-                <CreditCard className="h-8 w-8 text-blue-600" />
+                <CreditCard className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
-
-          <Card>
+          <Card className="shadow-lg border-orange-100 dark:border-orange-900">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Préstamos Activos
                   </p>
-                  <p className="text-2xl font-bold text-orange-600">
+                  <p className="text-2xl font-extrabold text-orange-600 dark:text-orange-400">
                     {dashboardData.prestamosActivos}
                   </p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-orange-600" />
+                <TrendingUp className="h-8 w-8 text-orange-500" />
               </div>
             </CardContent>
           </Card>
