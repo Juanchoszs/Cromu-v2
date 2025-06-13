@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Interfaz para los datos del préstamo
 export interface PrestamoData {
+  cuotas: any;
   id?: string;
   nombreDeudor: string;
   cedula: string;

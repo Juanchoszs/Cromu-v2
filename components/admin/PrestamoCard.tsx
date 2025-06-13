@@ -207,13 +207,21 @@ function CuotasPrestamo({
               `}
               title={obtenerTituloSubcuota(sub)}
               onClick={() => {
-                const next =
-                  sub.estado === "pendiente"
-                    ? "pagado"
-                    : sub.estado === "pagado"
-                    ? "aplazado"
-                    : "pendiente";
-                cambiarEstadoCuota(sub.numero, next);
+                if (sub.estado === "pendiente") {
+                  cambiarEstadoCuota(sub.numero, "pagado");
+                } else if (sub.estado === "pagado") {
+                  cambiarEstadoCuota(sub.numero, "aplazado");
+                } else if (sub.estado === "aplazado") {
+                  // Eliminar la subcuota
+                  const [num] = sub.numero.split(".");
+                  const nuevoHistorial = { ...prestamo.historialPagos };
+                  nuevoHistorial[num].subcuotas = nuevoHistorial[num].subcuotas.filter(sq => sq.numero !== sub.numero);
+                  const prestamoActualizado = {
+                    ...prestamo,
+                    historialPagos: nuevoHistorial,
+                  };
+                  onUpdateCuota(prestamoActualizado);
+                }
               }}
             >
               {sub.numero}

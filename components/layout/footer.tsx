@@ -33,9 +33,9 @@ export function Footer() {
         title: "Legal",
         links: [
           { name: "Términos y condiciones", href: "/terminos" },
-          { name: "Política de privacidad", href: "/privacidad" },
-          { name: "Cookies", href: "/cookies" },
-          { name: "Seguridad", href: "/seguridad" },
+          { name: "Política de privacidad", href: "/politica-privacidad" },
+          { name: "Política de cookies", href: "/politica-cookies" },
+          { name: "Aviso legal", href: "/aviso-legal" },
         ],
       },
       contact: {

@@ -540,31 +540,31 @@ export default function AhorradoresCrud() {
     >
       <motion.div 
         variants={slideUp}
-        className="flex justify-between items-center mb-6"
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4"
       >
         <h1 className="text-2xl font-bold text-white">Gestión de Ahorradores</h1>
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={cargarAhorradores}
             disabled={cargando}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center disabled:opacity-50"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center justify-center disabled:opacity-50 w-full sm:w-auto"
           >
             <RefreshCw className={`mr-2 h-5 w-5 ${cargando ? 'animate-spin' : ''}`} />
-            {cargando ? 'Cargando...' : 'Actualizar'}
+            <span className="whitespace-nowrap">{cargando ? 'Cargando...' : 'Actualizar'}</span>
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               setMostrarFormulario(true);
               setEditandoIndex(null);
             }}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors flex items-center"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors flex items-center justify-center w-full sm:w-auto"
           >
             <User className="mr-2 h-5 w-5" />
-            Nuevo Ahorrador
+            <span className="whitespace-nowrap">Nuevo Ahorrador</span>
           </motion.button>
         </div>
       </motion.div>

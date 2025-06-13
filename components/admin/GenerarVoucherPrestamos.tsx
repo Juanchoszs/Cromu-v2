@@ -114,8 +114,10 @@ const generarTablaAmortizacion = (prestamo: Prestamo) => {
           mes: `${mes}.${idx + 1}`,
           cuota: cuotaFija,
           interes: Math.ceil(interes / 1000) * 1000,
-          abonoCapital: subcuota.estado === 'pagado' ? Math.ceil(abonoCapital / 1000) * 1000 : 0,
-          saldo: Math.ceil(nuevoSaldo / 1000) * 1000,
+          abonoCapital: Math.ceil(abonoCapital / 1000) * 1000, // Mostrar siempre el abono a capital teórico
+          saldo: subcuota.estado === 'pagado' 
+            ? Math.ceil(nuevoSaldo / 1000) * 1000 
+            : Math.ceil(saldoCuota / 1000) * 1000, // Si está pendiente, mantener el saldo actual
           estado: subcuota.estado === 'pagado' ? 'Pagado' : 'Pendiente',
           fechaPago: subcuota.fecha_pago 
             ? new Date(subcuota.fecha_pago).toLocaleDateString('es-ES')
@@ -148,16 +150,13 @@ const generarTablaAmortizacion = (prestamo: Prestamo) => {
       saldoActual = filaTeorica.saldoFinal;
       
     } else {
-      // Cuota pendiente
+      // Cuota pendiente - AQUÍ ESTÁ LA CORRECCIÓN
       const esUltimaCuota = mes === prestamo.plazoMeses;
       const interes = filaTeorica.interes;
-      const abonoCapital = esUltimaCuota 
-        ? filaTeorica.saldoInicial  // En la última cuota, el abono a capital es todo el saldo
-        : filaTeorica.abonoCapital;
+      const abonoCapital = filaTeorica.abonoCapital;
       
-      const saldoMostrar = esUltimaCuota 
-        ? 0  // En la última cuota, el saldo debe ser 0
-        : Math.max(0, filaTeorica.saldoInicial - (mes > 1 ? filaTeorica.abonoCapital : 0));
+      // Para cuotas pendientes, usar directamente el saldo final de la tabla teórica
+      const saldoMostrar = Math.ceil(filaTeorica.saldoFinal / 1000) * 1000;
       
       tabla.push({
         mes: mes.toString(),
@@ -166,7 +165,7 @@ const generarTablaAmortizacion = (prestamo: Prestamo) => {
           : cuotaFija,
         interes: Math.ceil(interes / 1000) * 1000,
         abonoCapital: Math.ceil(abonoCapital / 1000) * 1000,
-        saldo: Math.ceil(saldoMostrar / 1000) * 1000,
+        saldo: saldoMostrar,
         estado: 'Pendiente',
         fechaPago: ''
       });
@@ -180,7 +179,8 @@ const generarTablaAmortizacion = (prestamo: Prestamo) => {
       ultimaFila.saldo = 0;
       // Ajustar el abono a capital para que el saldo llegue a 0
       if (ultimaFila.estado === 'Pendiente' || ultimaFila.estado === 'Vencido') {
-        ultimaFila.abonoCapital = ultimaFila.saldoInicial || 0;
+        const saldoAnterior = tabla.length > 1 ? tabla[tabla.length - 2].saldo : prestamo.monto;
+        ultimaFila.abonoCapital = Math.ceil(saldoAnterior / 1000) * 1000;
         ultimaFila.cuota = Math.ceil((ultimaFila.interes + ultimaFila.abonoCapital) / 1000) * 1000;
       }
     }

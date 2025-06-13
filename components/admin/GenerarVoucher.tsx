@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Ahorrador } from './AhorradoresCrud';
-import { Printer, Download, Share2, ChevronLeft } from 'lucide-react';
+import { Printer, Download, ChevronLeft, Share2 } from 'lucide-react';
 import Chart from 'chart.js/auto';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -339,10 +339,8 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
     
     try {
       const voucherElement = voucherContenidoRef.current;
-      
-      // Configuración para mejor captura de canvas y tablas
       const options = {
-        scale: 2, // Mayor escala para mejor calidad
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -350,34 +348,30 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
         height: voucherElement.scrollHeight,
         windowHeight: voucherElement.scrollHeight
       };
-      
-      // Crear canvas con todo el contenido
       const canvas = await html2canvas(voucherElement, options);
-      
-      // Determinar dimensiones del PDF (A4)
-      const imgWidth = 210; // A4 ancho en mm
-      const pageHeight = 297; // A4 alto en mm
+
+      // Dimensiones del PDF (A4)
+      const imgWidth = 210; // mm
+      const pageHeight = 297; // mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      // Inicializar PDF
+
       const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      let heightLeft = imgHeight;
       let position = 0;
-      
+      let heightLeft = imgHeight;
+
+      const imgData = canvas.toDataURL('image/png');
+
       // Primera página
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      // Agregar páginas adicionales si es necesario
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+
+      // Si el contenido es mayor que una página, agregar más páginas
+      while (heightLeft > pageHeight) {
+        position = position - pageHeight;
         pdf.addPage();
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
-      
-      // Descargar el PDF
+
       pdf.save(`Comprobante_${ahorrador.nombre.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (error) {
       console.error("Error al generar PDF:", error);
@@ -387,50 +381,55 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
     }
   };
   
-  // Compartir el voucher (ejemplo básico que podría expandirse)
-  const compartirVoucher = async () => {
-    if (!voucherContenidoRef.current) return;
-    
+  // Función para compartir el voucher como PDF
+  const compartirPDF = async () => {
+    if (!voucherContenidoRef.current || !graficosGenerados) return;
     setLoading(true);
-    
     try {
       const voucherElement = voucherContenidoRef.current;
-      const canvas = await html2canvas(voucherElement, { scale: 2 });
-      
-      // Convertir canvas a blob
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          throw new Error("No se pudo crear la imagen para compartir");
-        }
-        
-        // Crear objeto para compartir
-        const shareData = {
-          title: `Comprobante de Ahorro - ${ahorrador.nombre}`,
-          text: `Comprobante de ahorro de ${ahorrador.nombre} - CROMU Finance Services`,
-          files: [
-            new File([blob], `comprobante_${ahorrador.nombre.replace(/\s+/g, '_')}.png`, { 
-              type: 'image/png' 
-            })
-          ]
-        };
-        
-        // Verificar si la API de compartir está disponible
-        if (navigator.canShare && navigator.canShare(shareData)) {
-          await navigator.share(shareData);
-        } else {
-          alert("Su navegador no admite la función de compartir archivos");
-        }
-      }, 'image/png');
+      const options = {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        height: voucherElement.scrollHeight,
+        windowHeight: voucherElement.scrollHeight
+      };
+      const canvas = await html2canvas(voucherElement, options);
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+
+      const pdfBlob = pdf.output('blob');
+      const pdfFile = new File(
+        [pdfBlob],
+        `Comprobante_${ahorrador.nombre.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`,
+        { type: 'application/pdf' }
+      );
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          title: 'Comprobante de Ahorro',
+          text: 'Te comparto el comprobante de ahorro generado desde CROMU.',
+          files: [pdfFile]
+        });
+      } else {
+        alert('La función de compartir no está soportada en este dispositivo o navegador.');
+      }
     } catch (error) {
-      console.error("Error al compartir:", error);
-      alert("Hubo un error al compartir el comprobante");
+      alert('No se pudo compartir el PDF.');
     } finally {
       setLoading(false);
     }
   };
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:p-0 print:bg-white print:inset-auto">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:p-0 print:bg-white print:inset-auto"
+      id="voucher-root" // <-- Añade este id
+    >
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-full print:overflow-visible">
         <div className="p-6 print:p-2">
           {/* Barra de herramientas - Se oculta al imprimir */}
@@ -455,14 +454,6 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
                 <Download size={20} />
               </button>
               <button 
-                onClick={compartirVoucher}
-                className="p-2 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
-                title="Compartir comprobante"
-                disabled={loading || !graficosGenerados}
-              >
-                <Share2 size={20} />
-              </button>
-              <button 
                 onClick={imprimirVoucher}
                 className="p-2 bg-emerald-100 text-emerald-700 rounded-full hover:bg-emerald-200"
                 title="Imprimir comprobante"
@@ -470,6 +461,16 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
               >
                 <Printer size={20} />
               </button>
+              {typeof navigator !== "undefined" && typeof navigator.share === "function" && (
+                <button
+                  onClick={compartirPDF}
+                  className="p-2 bg-amber-100 text-amber-700 rounded-full hover:bg-amber-200"
+                  title="Compartir PDF"
+                  disabled={loading || !graficosGenerados}
+                >
+                  <Share2 size={20} />
+                </button>
+              )}
             </div>
           </div>
           
@@ -568,7 +569,7 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
               </div>
             </div>
             
-            <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6 print:grid-cols-2 print:print\\:grid-cols-2">
               <div>
                 <h3 className="font-semibold text-lg mb-2 text-black">Evolución del Ahorro</h3>
                 <div className="bg-white border border-gray-200 rounded-lg p-4 h-72">
@@ -583,104 +584,112 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
               </div>
             </div>
             
-            <div className="mb-8">
-              <h3 className="font-semibold text-lg mb-2 text-black">Detalle de Pagos</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-200">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="py-2 px-4 border-b text-left text-black">Mes</th>
-                      <th className="py-2 px-4 border-b text-left text-black">Estado</th>
-                      <th className="py-2 px-4 border-b text-right text-black">Monto Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(ahorrador.historialPagos)
-                      .sort(([mesA], [mesB]) => mesA.localeCompare(mesB))
-                      .map(([mes, { pagado, monto, consignaciones = [] }]) => (
-                        <React.Fragment key={mes}>
-                          <tr className="border-b hover:bg-gray-50">
-                            <td className="py-2 px-4 text-black">
-                              {mes.split('-')[1]}/{mes.split('-')[0]}
-                            </td>
-                            <td className="py-2 px-4">
-                              {pagado ? (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  Pagado
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                  Pendiente
-                                </span>
+            {/* Contenido del voucher */}
+            <div 
+              ref={voucherContenidoRef} 
+              className="border border-gray-300 p-6 rounded-lg print:border-none print:p-0"
+            >
+              {/* Agrupa tabla y firma para evitar salto de página */}
+              <div className="no-break">
+                <div className="mb-8">
+                  <h3 className="font-semibold text-lg mb-2 text-black">Detalle de Pagos</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full bg-white border border-gray-200">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="py-2 px-4 border-b text-left text-black">Mes</th>
+                          <th className="py-2 px-4 border-b text-left text-black">Estado</th>
+                          <th className="py-2 px-4 border-b text-right text-black">Monto Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(ahorrador.historialPagos)
+                          .sort(([mesA], [mesB]) => mesA.localeCompare(mesB))
+                          .map(([mes, { pagado, monto, consignaciones = [] }]) => (
+                            <React.Fragment key={mes}>
+                              <tr className="border-b hover:bg-gray-50">
+                                <td className="py-2 px-4 text-black">
+                                  {mes.split('-')[1]}/{mes.split('-')[0]}
+                                </td>
+                                <td className="py-2 px-4">
+                                  {pagado ? (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                      Pagado
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                      Pendiente
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-2 px-4 text-right text-black">
+                                  {pagado ? formatearMoneda(monto) : '-'}
+                                </td>
+                              </tr>
+                              {pagado && consignaciones && consignaciones.length > 0 && (
+                                <tr className="bg-gray-50">
+                                  <td colSpan={3} className="py-2 px-4">
+                                    <div className="pl-4 border-l-2 border-emerald-500">
+                                      <p className="text-sm font-medium text-gray-700 mb-1">Detalle de consignaciones:</p>
+                                      <table className="w-full text-sm">
+                                        <thead>
+                                          <tr className="text-gray-600">
+                                            <th className="py-1 px-2 text-left">Fecha</th>
+                                            <th className="py-1 px-2 text-right">Monto</th>
+                                            {consignaciones.some(c => c.descripcion) && (
+                                              <th className="py-1 px-2 text-left">Descripción</th>
+                                            )}
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {consignaciones.map((consignacion, idx) => (
+                                            <tr key={idx} className="border-t border-gray-200">
+                                              <td className="py-1 px-2 text-black">
+                                                {consignacion.fecha ? new Date(consignacion.fecha).toLocaleDateString('es-CO', {
+                                                  year: 'numeric',
+                                                  month: '2-digit',
+                                                  day: '2-digit'
+                                                }) : 'Sin fecha'}
+                                              </td>
+                                              <td className="py-1 px-2 text-right text-black">
+                                                {formatearMoneda(consignacion.monto || 0)}
+                                              </td>
+                                              {consignaciones.some(c => c.descripcion) && (
+                                                <td className="py-1 px-2 text-black">
+                                                  {consignacion.descripcion || '-'}
+                                                </td>
+                                              )}
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </td>
+                                </tr>
                               )}
-                            </td>
-                            <td className="py-2 px-4 text-right text-black">
-                              {pagado ? formatearMoneda(monto) : '-'}
-                            </td>
-                          </tr>
-                          {pagado && consignaciones && consignaciones.length > 0 && (
-                            <tr className="bg-gray-50">
-                              <td colSpan={3} className="py-2 px-4">
-                                <div className="pl-4 border-l-2 border-emerald-500">
-                                  <p className="text-sm font-medium text-gray-700 mb-1">Detalle de consignaciones:</p>
-                                  <table className="w-full text-sm">
-                                    <thead>
-                                      <tr className="text-gray-600">
-                                        <th className="py-1 px-2 text-left">Fecha</th>
-                                        <th className="py-1 px-2 text-right">Monto</th>
-                                        {consignaciones.some(c => c.descripcion) && (
-                                          <th className="py-1 px-2 text-left">Descripción</th>
-                                        )}
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {consignaciones.map((consignacion, idx) => (
-                                        <tr key={idx} className="border-t border-gray-200">
-                                          <td className="py-1 px-2 text-black">
-                                            {consignacion.fecha ? new Date(consignacion.fecha).toLocaleDateString('es-CO', {
-                                              year: 'numeric',
-                                              month: '2-digit',
-                                              day: '2-digit'
-                                            }) : 'Sin fecha'}
-                                          </td>
-                                          <td className="py-1 px-2 text-right text-black">
-                                            {formatearMoneda(consignacion.monto || 0)}
-                                          </td>
-                                          {consignaciones.some(c => c.descripcion) && (
-                                            <td className="py-1 px-2 text-black">
-                                              {consignacion.descripcion || '-'}
-                                            </td>
-                                          )}
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            <div className="mt-8 pt-4 border-t">
-              <div className="flex flex-col sm:flex-row justify-between">
-                <div className="mb-4 sm:mb-0">
-                  <p className="text-sm text-gray-800 font-medium">Generado por:</p>
-                  <p className="font-semibold text-gray-900">Administrador CROMU</p>
+                            </React.Fragment>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div className="text-left sm:text-right">
-                  <p className="text-sm text-gray-800 font-medium">Firma Digital:</p>
-                  <p className="font-semibold text-emerald-700">CROMU-{Date.now().toString(36).substring(0, 6).toUpperCase()}</p>
+                <div className="mt-8 pt-4 border-t">
+                  <div className="flex flex-col sm:flex-row justify-between">
+                    <div className="mb-4 sm:mb-0">
+                      <p className="text-sm text-gray-800 font-medium">Generado por:</p>
+                      <p className="font-semibold text-gray-900">Administrador CROMU</p>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <p className="text-sm text-gray-800 font-medium">Firma Digital:</p>
+                      <p className="font-semibold text-emerald-700">CROMU-{Date.now().toString(36).substring(0, 6).toUpperCase()}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-800 mt-4 text-center">
+                    Este documento es un comprobante informativo de los ahorros registrados en CROMU Finance Services.
+                    Para cualquier aclaración, comuníquese con nuestro servicio al cliente.
+                  </p>
                 </div>
               </div>
-              <p className="text-xs text-gray-800 mt-4 text-center">
-                Este documento es un comprobante informativo de los ahorros registrados en CROMU Finance Services.
-                Para cualquier aclaración, comuníquese con nuestro servicio al cliente.
-              </p>
             </div>
           </div>
         </div>
@@ -690,46 +699,136 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
       <style jsx global>{`
         @media print {
           @page {
-            size: A4;
-            margin: 10mm;
+            size: A4 portrait;
+            margin: 4mm;
           }
-          
           body * {
-            visibility: hidden;
+            visibility: hidden !important;
           }
-          
-          #root > div > div {
-            visibility: visible;
-            width: 100%;
-            position: absolute;
-            left: 0;
-            top: 0;
+          #voucher-root, #voucher-root * {
+            visibility: visible !important;
           }
-          
+          #voucher-root {
+            position: static !important;
+            left: auto !important;
+            top: auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            height: auto !important;
+            background: white !important;
+            z-index: 9999 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+          }
           .print\\:hidden {
             display: none !important;
           }
-          
+          .max-w-4xl, .max-h-[90vh], .overflow-y-auto, .print\\:max-h-full, .print\\:overflow-visible {
+            max-width: none !important;
+            max-height: none !important;
+            overflow: visible !important;
+          }
+          /* Reduce paddings y márgenes */
+          .p-6, .print\\:p-2 {
+            padding: 0.15rem !important;
+          }
+          .mb-6, .mb-8, .mt-8, .pt-4, .pb-4 {
+            margin-bottom: 0.25rem !important;
+            margin-top: 0.25rem !important;
+            padding-top: 0.15rem !important;
+            padding-bottom: 0.15rem !important;
+          }
+          .rounded-lg, .rounded-full {
+            border-radius: 0.1rem !important;
+          }
+          /* Reduce fuentes aún más */
+          .text-2xl, .text-xl, .text-lg {
+            font-size: 0.78rem !important;
+          }
+          .text-base, .text-sm, .text-xs {
+            font-size: 0.62rem !important;
+          }
+          .font-bold, .font-semibold, .font-medium {
+            font-weight: 500 !important;
+          }
+          /* Reduce altura de los gráficos */
+          .h-72 {
+            height: 12rem !important;    /* Aumenta la altura para impresión */
+            min-height: 10rem !important;
+          }
           canvas {
-            height: auto !important;
+            height: 11rem !important;    /* Ajusta el canvas también */
+            width: 100% !important;
+            max-width: 100% !important;
+            page-break-inside: avoid !important;
+          }
+          /* Tablas compactas */
+          table {
+            font-size: 0.62rem !important;
+            page-break-inside: auto;
             width: 100% !important;
           }
-          
-          table {
-            page-break-inside: auto;
+          th, td {
+            padding: 0.09rem 0.12rem !important;
           }
-          
           tr {
             page-break-inside: avoid;
             page-break-after: auto;
           }
-          
           thead {
             display: table-header-group;
           }
-          
           tfoot {
             display: table-footer-group;
+          }
+          /* Grids y layouts */
+          .grid, .grid-cols-1, .lg\\:grid-cols-2, .gap-6, .print\\:grid-cols-2 {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 0.2rem !important;
+          }
+          /* Evita salto de página entre los gráficos y la tabla */
+          /* .mb-8.grid, .mb-8:last-of-type, .mb-6:last-of-type {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            page-break-after: avoid !important;
+          } */
+          /* Permitir saltos de página naturales en la tabla y la sección final */
+          .mb-8, .mt-8, .pt-4, .pb-4 {
+            page-break-inside: auto !important;
+            page-break-after: auto !important;
+            page-break-before: auto !important;
+          }
+          /* Si quieres que la tabla y la sección de firma siempre estén juntas, puedes envolverlas en un div y aplicar:
+          .no-break {
+            page-break-inside: avoid !important;
+          } */
+
+          /* Ajusta el tamaño de TODAS las fuentes para que sean uniformes y pequeñas */
+          body, #voucher-root, #voucher-root * {
+            font-size: 0.62rem !important;
+            line-height: 1.1 !important;
+          }
+          .text-2xl, .text-xl, .text-lg, .text-base, .text-sm, .text-xs, h1, h2, h3, h4, h5, h6, p, span, th, td {
+            font-size: 0.62rem !important;
+            line-height: 1.1 !important;
+            font-weight: 400 !important;
+          }
+          .font-bold, .font-semibold, .font-medium {
+            font-weight: 500 !important;
+          }
+
+          /* Opcional: Si algún número o texto sigue grande, fuerza el tamaño */
+          th, td {
+            font-size: 0.62rem !important;
+          }
+
+          /* Mantén el margen superior reducido */
+          #voucher-root, #voucher-root > div {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
           }
         }
       `}</style>
