@@ -60,30 +60,38 @@ function CuotasPrestamo({
   onUpdateCuota: (prestamo: Prestamo) => Promise<void>;
 }) {
   
-  const cambiarEstadoCuota = async (numeroCuota: string, nuevoEstado: EstadoCuota) => {
+  const cambiarEstadoCuota = async (
+    numeroCuota: string,
+    nuevoEstado: EstadoCuota | ("eliminar" & { __subcuotaOnly?: true })
+  ) => {
     const nuevoHistorial = { ...prestamo.historialPagos };
     const fechaActual = new Date().toISOString();
 
     if (numeroCuota.includes(".")) {
       // Es una subcuota
       const [num, sub] = numeroCuota.split(".");
-      const subcuotas = nuevoHistorial[num].subcuotas.map(sq => {
-        if (sq.numero === numeroCuota) {
-          const subcuotaActualizada = { ...sq, estado: nuevoEstado };
+      if (nuevoEstado === "eliminar") {
+        // Eliminar la subcuota
+        nuevoHistorial[num].subcuotas = nuevoHistorial[num].subcuotas.filter(sq => sq.numero !== numeroCuota);
+      } else {
+        const subcuotas = nuevoHistorial[num].subcuotas.map(sq => {
+          if (sq.numero === numeroCuota) {
+            const subcuotaActualizada = { ...sq, estado: nuevoEstado };
 
-          if (nuevoEstado === "pagado") {
-            subcuotaActualizada.fecha_pago = fechaActual;
-          } else if (nuevoEstado === "aplazado") {
-            delete subcuotaActualizada.fecha_pago;
-          } else if (nuevoEstado === "pendiente") {
-            delete subcuotaActualizada.fecha_pago;
+            if (nuevoEstado === "pagado") {
+              subcuotaActualizada.fecha_pago = fechaActual;
+            } else if (nuevoEstado === "aplazado") {
+              delete subcuotaActualizada.fecha_pago;
+            } else if (nuevoEstado === "pendiente") {
+              delete subcuotaActualizada.fecha_pago;
+            }
+
+            return subcuotaActualizada;
           }
-
-          return subcuotaActualizada;
-        }
-        return sq;
-      });
-      nuevoHistorial[num].subcuotas = subcuotas;
+          return sq;
+        });
+        nuevoHistorial[num].subcuotas = subcuotas;
+      }
     } else {
       // Es una cuota principal
       if (nuevoEstado === "aplazado") {
@@ -106,7 +114,8 @@ function CuotasPrestamo({
           });
         }
       } else {
-        nuevoHistorial[numeroCuota].estado = nuevoEstado;
+        // Only allow EstadoCuota for main cuotas
+        nuevoHistorial[numeroCuota].estado = nuevoEstado as EstadoCuota;
 
         if (nuevoEstado === "pagado") {
           nuevoHistorial[numeroCuota].fecha_pago = fechaActual;

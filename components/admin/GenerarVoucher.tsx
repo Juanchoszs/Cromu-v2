@@ -334,9 +334,9 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
   // Función para descargar el voucher como PDF
   const descargarPDF = async () => {
     if (!voucherContenidoRef.current || !graficosGenerados) return;
-    
+
     setLoading(true);
-    
+
     try {
       const voucherElement = voucherContenidoRef.current;
       const options = {
@@ -353,23 +353,49 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
       // Dimensiones del PDF (A4)
       const imgWidth = 210; // mm
       const pageHeight = 297; // mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      // Relación px/mm
+      const pxPerMm = canvas.width / imgWidth;
+      const pageHeightPx = Math.floor(pageHeight * pxPerMm);
+
       let position = 0;
-      let heightLeft = imgHeight;
+      let pageNum = 0;
+      const pdf = new jsPDF('p', 'mm', 'a4');
 
-      const imgData = canvas.toDataURL('image/png');
+      while (position < canvas.height) {
+        // Crear un canvas temporal para cada página
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = Math.min(pageHeightPx, canvas.height - position);
 
-      // Primera página
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        const ctx = pageCanvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(
+            canvas,
+            0,
+            position,
+            canvas.width,
+            pageCanvas.height,
+            0,
+            0,
+            canvas.width,
+            pageCanvas.height
+          );
+        }
 
-      // Si el contenido es mayor que una página, agregar más páginas
-      while (heightLeft > pageHeight) {
-        position = position - pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        const imgData = pageCanvas.toDataURL('image/png');
+        if (pageNum > 0) pdf.addPage();
+        pdf.addImage(
+          imgData,
+          'PNG',
+          0,
+          0,
+          imgWidth,
+          (pageCanvas.height / pxPerMm)
+        );
+
+        position += pageHeightPx;
+        pageNum++;
       }
 
       pdf.save(`Comprobante_${ahorrador.nombre.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -397,10 +423,54 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
         windowHeight: voucherElement.scrollHeight
       };
       const canvas = await html2canvas(voucherElement, options);
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Dimensiones del PDF (A4)
+      const imgWidth = 210; // mm
+      const pageHeight = 297; // mm
+
+      // Relación px/mm
+      const pxPerMm = canvas.width / imgWidth;
+      const pageHeightPx = Math.floor(pageHeight * pxPerMm);
+
+      let position = 0;
+      let pageNum = 0;
       const pdf = new jsPDF('p', 'mm', 'a4');
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+
+      while (position < canvas.height) {
+        // Crear un canvas temporal para cada página
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = Math.min(pageHeightPx, canvas.height - position);
+
+        const ctx = pageCanvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(
+            canvas,
+            0,
+            position,
+            canvas.width,
+            pageCanvas.height,
+            0,
+            0,
+            canvas.width,
+            pageCanvas.height
+          );
+        }
+
+        const imgData = pageCanvas.toDataURL('image/png');
+        if (pageNum > 0) pdf.addPage();
+        pdf.addImage(
+          imgData,
+          'PNG',
+          0,
+          0,
+          imgWidth,
+          (pageCanvas.height / pxPerMm)
+        );
+
+        position += pageHeightPx;
+        pageNum++;
+      }
 
       const pdfBlob = pdf.output('blob');
       const pdfFile = new File(
@@ -721,9 +791,9 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
             margin: 0 !important;
             box-shadow: none !important;
             padding: 0 !important;
-          }
-          .print\\:hidden {
-            display: none !important;
+            /* Elimina cualquier restricción de altura y overflow */
+            max-height: none !important;
+            overflow: visible !important;
           }
           .max-w-4xl, .max-h-[90vh], .overflow-y-auto, .print\\:max-h-full, .print\\:overflow-visible {
             max-width: none !important;

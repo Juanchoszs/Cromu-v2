@@ -217,7 +217,15 @@ export function ContactPageHeader() {
                 <div className="h-px w-full bg-gray-100 dark:bg-gray-700 my-4" />
 
                 <div className="space-y-3">
-                  <Button className="w-full bg-[#2a7d5a] hover:bg-[#1a5c41] text-white font-medium py-5 flex items-center justify-center">
+                  <Button
+                    className="w-full bg-[#2a7d5a] hover:bg-[#1a5c41] text-white font-medium py-5 flex items-center justify-center"
+                    onClick={() => {
+                      const form = document.getElementById('contact-form');
+                      if (form) {
+                        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
+                  >
                     <span>{t(translations).requestButton}</span>
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>

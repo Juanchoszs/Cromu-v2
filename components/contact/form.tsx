@@ -262,6 +262,7 @@ export function ContactFormComponent() {
                   </motion.div>
                 ) : (
                   <motion.form
+                    id="contact-form"
                     onSubmit={handleSubmit}
                     variants={staggerContainer}
                     className="space-y-5"
