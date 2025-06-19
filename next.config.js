@@ -30,9 +30,8 @@ const nextConfig = {
   },
   // Configuración de variables de entorno
   env: {
-    CLIENT_URL: process.env.NODE_ENV === 'production' 
-      ? 'https://cromu.vercel.app' 
-      : 'http://localhost:3000',
+    CLIENT_URL: 'https://cromu.vercel.app',
+    NEXTAUTH_URL: 'https://cromu.vercel.app',
   },
   // Configuración de compilación
   reactStrictMode: true,

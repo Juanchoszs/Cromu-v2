@@ -129,11 +129,8 @@ export async function POST(req: NextRequest) {
         throw new Error("Error al generar el token de recuperación");
       }
 
-      // Construir el enlace de restablecimiento - Usar localhost en desarrollo
-      const isProduction = process.env.NODE_ENV === 'production';
-      const protocol = isProduction ? 'https://' : 'http://';
-      const host = isProduction ? 'cromu.vercel.app' : 'localhost:3000';
-      const resetLink = `${protocol}${host}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+      // Construir el enlace de restablecimiento
+      const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
       
       console.log('URL de restablecimiento generada:', resetLink);
       console.log('NODE_ENV:', process.env.NODE_ENV);
