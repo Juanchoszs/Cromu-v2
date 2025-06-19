@@ -61,6 +61,7 @@ const SuccessNotification: React.FC<SuccessNotificationProps> = ({
     <AnimatePresence>
       {isVisible && (
         <motion.div
+          className={getPositionClasses()}
           initial={{ opacity: 0, x: 0 }}
           animate={{ opacity: 1, x: [0, 10, -10, 0] }}
           exit={{ opacity: 0 }}

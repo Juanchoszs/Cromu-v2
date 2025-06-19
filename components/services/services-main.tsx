@@ -17,7 +17,10 @@ export default function ServicesMain() {
   const [activeTab, setActiveTab] = useState<string>("")
   const servicesSectionRef = useRef<HTMLElement>(null)
 
-  const availableTabs = ["ahorros", "prestamos", "cartera", "libreInversion", "adelantoPrima"]
+  const availableTabs = React.useMemo(
+    () => ["ahorros", "prestamos", "cartera", "libreInversion", "adelantoPrima"],
+    []
+  )
 
   useEffect(() => {
     const tabParam = searchParams.get("tab")
@@ -35,7 +38,7 @@ export default function ServicesMain() {
     } else {
       setActiveTab(availableTabs[0])
     }
-  }, [searchParams])
+  }, [searchParams, availableTabs])
 
   const services = {
     es: [

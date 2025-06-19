@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import {  AnimatePresence } from "framer-motion";
 import { DollarSign } from "lucide-react";
 import FormularioPrestamo from "./FromularioPrestamo";
 import GenerarVoucherPrestamos from "./GenerarVoucherPrestamos";
@@ -60,7 +60,7 @@ export default function PrestamosCrud() {
     try {
       // Asegurarse de que las fechas de pago se conserven correctamente
       if (prestamoActualizado.historialPagos) {
-        Object.entries(prestamoActualizado.historialPagos).forEach(([num, cuota]) => {
+        Object.entries(prestamoActualizado.historialPagos).forEach(([, cuota]) => {
           // Verificar si la cuota tiene fecha_pago y está en estado pagado
           if (cuota.estado === "pagado" && !cuota.fecha_pago) {
             cuota.fecha_pago = new Date().toISOString();
@@ -124,7 +124,7 @@ export default function PrestamosCrud() {
 
       // Verificar y actualizar fechas de pago para préstamos existentes
       if (isEdit && prestamoCompleto.historialPagos) {
-        Object.entries(prestamoCompleto.historialPagos).forEach(([num, cuota]) => {
+        Object.entries(prestamoCompleto.historialPagos).forEach(([, cuota]) => {
           // Verificar si la cuota tiene fecha_pago y está en estado pagado
           if (cuota.estado === "pagado" && !cuota.fecha_pago) {
             cuota.fecha_pago = new Date().toISOString();

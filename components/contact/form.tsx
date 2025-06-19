@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Send, HelpCircle, ArrowRight, Check, MousePointer } from "lucide-react";
+import { ChevronDown, Send, Check, MousePointer } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
 // Translations object

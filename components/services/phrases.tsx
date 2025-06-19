@@ -1,14 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import {  useEffect } from "react"
 import { motion, useAnimation } from "framer-motion"
 import { useLanguage } from "@/contexts/language-context"
 import { useInView } from "react-intersection-observer"
 import Link from "next/link"  // Importamos Link de Next.js
+import Image from "next/image" // Asegúrate de tener este import al inicio del archivo
 
 export default function Phrases() {
-  const { t, language } = useLanguage()
-  const [isHovered, setIsHovered] = useState(false)
+  const { language } = useLanguage()
   const controls = useAnimation()
   const [ref, inView] = useInView({
     threshold: 0.3,
@@ -32,14 +32,7 @@ export default function Phrases() {
     },
   }
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
-    },
-  }
+
 
   const content = {
     es: {
@@ -84,22 +77,22 @@ export default function Phrases() {
         >
           {/* Text Column */}
           <motion.div className="text-white space-y-6 px-4 lg:px-8">
-            <motion.h2 
+            <motion.h2
               className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight"
-              variants={itemVariants}
+
             >
               {currentContent.mainTitle}
             </motion.h2>
-            
-            <motion.div className="space-y-3 text-lg" variants={itemVariants}>
+
+            <motion.div className="space-y-3 text-lg">
               <p>{currentContent.subTitle}</p>
               <p className="font-semibold text-teal-200 text-3xl">{currentContent.highlightedText}</p>
               <p>{currentContent.subText}</p>
             </motion.div>
-            
-            <motion.div 
+
+            <motion.div
               className="pt-4"
-              variants={itemVariants}
+            
             >
               <ul className="grid grid-cols-2 gap-3">
                 {currentContent.features.map((feature, index) => (
@@ -114,23 +107,18 @@ export default function Phrases() {
                 ))}
               </ul>
             </motion.div>
-            
-            <motion.div 
-              variants={itemVariants}
+
+            <motion.div
               className="pt-2"
             >
-              {/* Reemplazamos el botón con un componente Link */}
-              <Link href="/contact">
-                <button 
-                  className="px-6 py-3 bg-white text-emerald-700 font-medium rounded-lg hover:bg-gray-200 transition-colors duration-300 shadow-lg transform hover:scale-105 hover:shadow-xl"
-                  onMouseEnter={() => setIsHovered(true)}
-                  onMouseLeave={() => setIsHovered(false)}
-                >
-                  {currentContent.ctaButton}
-                  <span className="ml-2 inline-block transition-transform duration-300 transform group-hover:translate-x-1">
-                    →
-                  </span>
-                </button>
+              <Link
+                href="/contact"
+                className="inline-block px-6 py-3 bg-white text-emerald-700 font-medium rounded-lg hover:bg-gray-200 transition-colors duration-300 shadow-lg transform hover:scale-105 hover:shadow-xl"
+              >
+                {currentContent.ctaButton}
+                <span className="ml-2 inline-block transition-transform duration-300 transform group-hover:translate-x-1">
+                  →
+                </span>
               </Link>
             </motion.div>
           </motion.div>
@@ -138,14 +126,14 @@ export default function Phrases() {
           {/* Image Column */}
           <motion.div 
             className="relative h-[300px] md:h-[400px] lg:h-[500px] flex justify-center lg:justify-end"
-            variants={itemVariants}
           >
-            {/* Placeholder for your image - replace src with your actual image path */}
             <div className="relative w-full max-w-md h-full">
-              <img 
-              src="servicios-0.webp" 
-              alt="Descripción de la imagen" 
-              className="absolute inset-0 w-full h-full object-cover rounded-xl border-2 border-white/20"
+              <Image
+                src="/servicios-0.webp"
+                alt="Descripción de la imagen"
+                fill
+                className="absolute inset-0 w-full h-full object-cover rounded-xl border-2 border-white/20"
+                priority
               />
             </div>
               

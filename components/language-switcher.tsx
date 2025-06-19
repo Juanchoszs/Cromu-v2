@@ -12,7 +12,6 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguage] = useState<string>("en"); // El idioma predeterminado es "en"
-  const languageLabel = language === "es" ? "Español" : "English";
   const t = (key: string): string => {
     const keys = key.split(".");
     let translation: any = language === "es" ? es : en; // Selecciona el idioma

@@ -3,7 +3,6 @@
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import Login from "@/components/espacio/login"
-import Registro from "@/components/espacio/registro";
 
 
 export default function espacio() {

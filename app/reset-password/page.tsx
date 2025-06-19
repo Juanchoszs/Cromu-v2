@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");

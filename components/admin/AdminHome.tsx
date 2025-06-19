@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, Users } from 'lucide-react';
+import { DollarSign,  Users } from 'lucide-react';
 import { Bar, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -88,7 +88,7 @@ export default function AdminHome() {
           totalAhorradores: ahorradores.length,
           totalDeudores: prestamos.length,
         });
-      } catch (error) {
+      } catch {
         // Si hay error, deja los valores en 0
       }
     };

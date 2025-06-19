@@ -1,74 +1,74 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { PiggyBank, HandCoins, TrendingUp, AlertCircle } from "lucide-react";
 import { UserSavings } from "./UserSavings";
 import { UserLoans } from "./UserLoans";
-import { PiggyBank, CreditCard, User, TrendingUp } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 interface DashboardData {
-  ahorros: any | null;
-  prestamos: any[];
-  totalAhorrado: number;
-  totalPrestado: number;
+  ahorroTotal: number;
+  totalPrestamos: number;
   prestamosActivos: number;
+  proximoPago?: {
+    fecha: string;
+    monto: number;
+  };
 }
 
 export function UserDashboard() {
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    ahorros: null,
-    prestamos: [],
-    totalAhorrado: 0,
-    totalPrestado: 0,
-    prestamosActivos: 0
-  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cedula, setCedula] = useState<string | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    ahorroTotal: 0,
+    totalPrestamos: 0,
+    prestamosActivos: 0,
+  });
 
   useEffect(() => {
     const cargarDatos = async () => {
       try {
         setIsLoading(true);
-        const cedulaUsuario = sessionStorage.getItem("cedulaAhorrador");
-        if (!cedulaUsuario) {
+        const cedula = sessionStorage.getItem("cedulaAhorrador");
+        if (!cedula) {
           setError("No se ha iniciado sesión con una cédula válida");
           return;
         }
-        setCedula(cedulaUsuario);
 
-        // Cargar ahorros y préstamos en paralelo
-        const [ahorrosResponse, prestamosResponse] = await Promise.all([
-          fetch(`/api/ahorradores/buscar?cedula=${cedulaUsuario}`).catch(() => null),
-          fetch(`/api/prestamos?cedula=${cedulaUsuario}`).catch(() => null)
+        // Simulamos la carga de datos
+        // En producción, reemplazar con llamadas a la API real
+        const [ahorrosRes, prestamosRes] = await Promise.all([
+          fetch(`/api/ahorradores/buscar?cedula=${cedula}`),
+          fetch(`/api/prestamos/usuario/${cedula}`)
         ]);
 
-        let ahorros = null;
-        let prestamos = [];
-
-        if (ahorrosResponse && ahorrosResponse.ok) {
-          ahorros = await ahorrosResponse.json();
+        if (!ahorrosRes.ok || !prestamosRes.ok) {
+          throw new Error("Error al cargar los datos del dashboard");
         }
 
-        if (prestamosResponse && prestamosResponse.ok) {
-          prestamos = await prestamosResponse.json();
-        }
+        const [ahorros, prestamos] = await Promise.all([
+          ahorrosRes.json(),
+          prestamosRes.json()
+        ]);
 
-        // Calcular estadísticas
-        const totalAhorrado = ahorros ? ahorros.ahorroTotal : 0;
-        const totalPrestado = prestamos.reduce((sum: number, p: any) => sum + p.monto, 0);
-        const prestamosActivos = prestamos.filter((p: any) => p.estado.toLowerCase() === 'activo').length;
+        const prestamosActivos = Array.isArray(prestamos) 
+          ? prestamos.filter((p: any) => p.estado === 'Activo').length 
+          : 0;
+        
+        const totalPrestamos = Array.isArray(prestamos)
+          ? prestamos.reduce((sum: number, p: any) => sum + (p.monto || 0), 0)
+          : 0;
 
         setDashboardData({
-          ahorros,
-          prestamos,
-          totalAhorrado,
-          totalPrestado,
-          prestamosActivos
+          ahorroTotal: ahorros?.ahorroTotal || 0,
+          totalPrestamos,
+          prestamosActivos,
+          proximoPago: prestamos[0]?.proximoPago
         });
+
       } catch (err) {
-        setError("Error al cargar los datos del usuario");
+        console.error('Error loading dashboard data:', err);
+        setError("No se pudieron cargar los datos del dashboard");
       } finally {
         setIsLoading(false);
       }
@@ -77,7 +77,7 @@ export function UserDashboard() {
     cargarDatos();
   }, []);
 
-  const formatearMoneda = (valor: number) => {
+  const formatearMoneda = (valor: number): string => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
@@ -88,110 +88,108 @@ export function UserDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-          </div>
-        </div>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader>
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
 
+
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-        <div className="max-w-7xl mx-auto">
-          <Card className="mt-8">
-            <CardContent className="p-8 text-center">
-              <User className="h-16 w-16 text-red-500 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Error de acceso</h2>
-              <p className="text-gray-600">{error}</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Card className="border-red-200 dark:border-red-900">
+        <CardContent className="p-6 text-center">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <AlertCircle className="h-12 w-12 text-red-500" />
+            <p className="text-lg font-medium text-red-600 dark:text-red-400">
+              Error al cargar el dashboard
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {error}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            >
+              Reintentar
+            </button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-1 tracking-tight">
-              Mi Panel Financiero
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Cédula: <span className="font-semibold">{cedula}</span>
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Total Ahorrado</CardTitle>
+            <PiggyBank className="h-5 w-5 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatearMoneda(dashboardData.ahorroTotal)}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              +20.1% desde el mes pasado
             </p>
-          </div>
-          <div className="flex gap-2">
-            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
-              Cliente activo
-            </Badge>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Resumen estadístico */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="shadow-lg border-emerald-100 dark:border-emerald-900">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                    Total Ahorrado
-                  </p>
-                  <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                    {formatearMoneda(dashboardData.totalAhorrado)}
-                  </p>
-                </div>
-                <PiggyBank className="h-8 w-8 text-emerald-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="shadow-lg border-blue-100 dark:border-blue-900">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                    Total Prestado
-                  </p>
-                  <p className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">
-                    {formatearMoneda(dashboardData.totalPrestado)}
-                  </p>
-                </div>
-                <CreditCard className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="shadow-lg border-orange-100 dark:border-orange-900">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                    Préstamos Activos
-                  </p>
-                  <p className="text-2xl font-extrabold text-orange-600 dark:text-orange-400">
-                    {dashboardData.prestamosActivos}
-                  </p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-orange-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Préstamos Activos</CardTitle>
+            <HandCoins className="h-5 w-5 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {dashboardData.prestamosActivos}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {dashboardData.totalPrestamos > 0 
+                ? `Total: ${formatearMoneda(dashboardData.totalPrestamos)}`
+                : 'No tienes préstamos activos'}
+            </p>
+          </CardContent>
+        </Card>
 
-        {/* Contenido principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <UserSavings fullView={true} />
-          </div>
-          <div className="space-y-6">
-            <UserLoans />
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Próximo Pago</CardTitle>
+            <TrendingUp className="h-5 w-5 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            {dashboardData.proximoPago ? (
+              <>
+                <div className="text-2xl font-bold">
+                  {formatearMoneda(dashboardData.proximoPago.monto)}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Vence el {new Date(dashboardData.proximoPago.fecha).toLocaleDateString('es-CO')}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No hay pagos pendientes
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <UserSavings fullView={true} />
+        <UserLoans fullView={true} />
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import { useLanguage } from "@/contexts/language-context";
 import Link from "next/link";
 
 export default function Login() {
-  const { language, t } = useLanguage(); // Se mantiene el idioma desde el contexto
+  const { t } = useLanguage(); // Se mantiene el idioma desde el contexto
   const [formData, setFormData] = useState({
     cedula: "",
     password: "",

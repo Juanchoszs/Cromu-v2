@@ -5,14 +5,13 @@ import Image from "next/image"
 import Link from "next/link"
 import { useLanguage } from "@/contexts/language-context"
 import { motion, AnimatePresence } from "framer-motion"
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Sparkles } from "lucide-react"
+import { ChevronUp, ChevronDown, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const ServiceCarousel = () => {
   const { language } = useLanguage()
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
   const carouselRef = useRef(null)
 
   const services = {
@@ -98,12 +97,10 @@ const ServiceCarousel = () => {
   // Handlers for pausing auto-rotation
   const handleMouseEnter = () => {
     setIsPaused(true);
-    setIsHovered(true);
   };
-  
+
   const handleMouseLeave = () => {
     setIsPaused(false);
-    setIsHovered(false);
   };
   
   const handleTouchStart = () => setIsPaused(true);

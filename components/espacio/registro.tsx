@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Lock, User, ArrowRight, Wallet, Eye, EyeOff, Mail } from "lucide-react";
+import { ArrowRight, Wallet, Eye, EyeOff, Mail } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
 export default function Registro() {
-  const { language, t } = useLanguage(); // Se mantiene el idioma desde el contexto
+  const { t } = useLanguage(); // Se mantiene el idioma desde el contexto
   const [formData, setFormData] = useState({
     cedula: "",
     email: "",

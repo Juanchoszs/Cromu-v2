@@ -563,7 +563,7 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
       } else {
         alert('La función de compartir no está soportada en este dispositivo o navegador.');
       }
-    } catch (error) {
+    } catch {
       alert('No se pudo compartir el PDF.');
     } finally {
       setLoading(false);

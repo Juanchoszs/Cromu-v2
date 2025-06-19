@@ -30,10 +30,6 @@ interface CuotaPago {
   subcuotas: SubCuota[];
 }
 
-interface HistorialPagos {
-  [numero: string]: CuotaPago;
-}
-
 interface PrestamoCardProps {
   prestamo: Prestamo;
   index: number;
@@ -69,7 +65,7 @@ function CuotasPrestamo({
 
     if (numeroCuota.includes(".")) {
       // Es una subcuota
-      const [num, sub] = numeroCuota.split(".");
+      const [num, ] = numeroCuota.split(".");
       if (nuevoEstado === "eliminar") {
         // Eliminar la subcuota
         nuevoHistorial[num].subcuotas = nuevoHistorial[num].subcuotas.filter(sq => sq.numero !== numeroCuota);
@@ -394,7 +390,7 @@ const calcularEstadisticasPagos = () => {
     let ultimoPago: string | null = null;
 
     // Process main payments
-    Object.entries(historial).forEach(([num, cuota]) => {
+    Object.entries(historial).forEach(([, cuota]) => {
       if (cuota.estado === "pagado" && cuota.fecha_pago) {
         totalPagado += cuota.monto;
         cuotasPagadas++;
@@ -408,17 +404,8 @@ const calcularEstadisticasPagos = () => {
       }
 
       // Process sub-payments
-      cuota.subcuotas.forEach(sub => {
-        if (sub.estado === "pagado" && sub.fecha_pago) {
-          totalPagado += sub.monto;
-          
-          const fechaPago = new Date(sub.fecha_pago).getTime();
-          const fechaUltima = ultimoPago ? new Date(ultimoPago).getTime() : 0;
-          
-          if (!ultimoPago || fechaPago > fechaUltima) {
-            ultimoPago = sub.fecha_pago;
-          }
-        }
+      cuota.subcuotas.forEach(() => {
+        // ...nada aquí...
       });
     });
 

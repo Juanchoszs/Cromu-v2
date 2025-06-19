@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from 'pg';
-import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
 
 const pool = new Pool({

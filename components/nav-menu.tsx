@@ -7,7 +7,7 @@ import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 export default function NavMenu() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
   const [isServicesOpen, setIsServicesOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
 

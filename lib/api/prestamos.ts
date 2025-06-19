@@ -220,8 +220,8 @@ export async function actualizarPrestamo(id: string, datos: Partial<PrestamoData
     }
     
     // Construir la consulta dinámica basada en los campos proporcionados
-    let updateFields = [];
-    let values = [id];
+    const updateFields = [];
+    const values = [id];
     let paramIndex = 2;
     
     if (datos.nombreDeudor !== undefined) {

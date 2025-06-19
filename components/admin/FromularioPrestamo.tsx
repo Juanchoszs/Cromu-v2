@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Save, X, DollarSign, User, Calendar, Percent } from "lucide-react";
 
@@ -54,7 +54,7 @@ export default function FormularioPrestamo({
   onCancelar,
 }: FormularioPrestamoProps) {
   // Función para inicializar el estado del formulario
-  const inicializarFormData = () => ({
+  const inicializarFormData = useCallback(() => ({
     id: prestamo?.id || "",
     nombreDeudor: prestamo?.nombreDeudor || "",
     cedula: prestamo?.cedula || "",
@@ -68,14 +68,14 @@ export default function FormularioPrestamo({
     garantia: prestamo?.garantia || "",
     estado: prestamo?.estado || "Activo",
     historialPagos: prestamo?.historialPagos || {},
-  });
+  }), [prestamo]);
 
   const [formData, setFormData] = useState<Prestamo>(inicializarFormData());
   
   // Resetear el formulario cuando cambia el préstamo
   useEffect(() => {
     setFormData(inicializarFormData());
-  }, [prestamo?.id]);
+  }, [prestamo?.id, inicializarFormData]);
 
   const [errores, setErrores] = useState<{ [key: string]: string }>({});
 

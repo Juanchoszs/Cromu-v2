@@ -6,9 +6,15 @@ const translations = { es, en }
 
 type Language = "es" | "en"
 
-const LanguageContext = createContext({
-  language: "es" as Language,
-  setLanguage: (_: Language) => {},
+type LanguageContextType = {
+  language: Language
+  setLanguage: React.Dispatch<React.SetStateAction<Language>>
+  t: (key: string) => string
+}
+
+const LanguageContext = createContext<LanguageContextType>({
+  language: "es",
+  setLanguage: () => {},
   t: (key: string) => key,
 })
 

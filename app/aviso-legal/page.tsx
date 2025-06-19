@@ -276,7 +276,7 @@ export default function AvisoLegalPage() {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: "easeOut"
+        ease: [0, 0, 0.58, 1] // cubic-bezier for easeOut
       }
     }
   }
@@ -375,7 +375,6 @@ export default function AvisoLegalPage() {
             {/* Sidebar con navegación */}
             <motion.div 
               className="lg:col-span-3"
-              variants={itemVariants}
             >
               <div className="sticky top-6">
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
@@ -411,7 +410,7 @@ export default function AvisoLegalPage() {
             {/* Contenido principal */}
             <motion.div 
               className="lg:col-span-9"
-              variants={itemVariants}
+
             >
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
                 {Object.entries(translations.sections).map(([key, section], index) => {

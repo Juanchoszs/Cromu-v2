@@ -345,7 +345,7 @@ export default function PoliticaPrivacidadPage() {
             {/* Sidebar con navegación */}
             <motion.div 
               className="lg:col-span-3"
-              variants={itemVariants}
+              initial={{ opacity: 0, x: -20 }}
             >
               <div className="sticky top-6">
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
@@ -381,7 +381,7 @@ export default function PoliticaPrivacidadPage() {
             {/* Contenido principal */}
             <motion.div 
               className="lg:col-span-9"
-              variants={itemVariants}
+             
             >
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
                 {Object.entries(translations.sections).map(([key, section], index) => {

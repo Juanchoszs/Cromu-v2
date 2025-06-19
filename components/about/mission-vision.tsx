@@ -4,7 +4,7 @@ import { useRef, useEffect, useMemo } from "react";
 import { motion, useAnimation, useInView } from "framer-motion";
 import { useLanguage } from "@/contexts/language-context";
 import { useTheme } from "next-themes";
-import { Target, Eye, Heart, Star, Shield, Users, BarChart } from "lucide-react";
+import { Target, Eye, Heart, Star,  } from "lucide-react";
 
 export function MisionVision() {
   const { language } = useLanguage();
@@ -110,7 +110,6 @@ export function MisionVision() {
       >
         {/* About Section - Enhanced Header */}
         <motion.div
-          variants={animations.item}
           className="bg-gradient-to-r from-emerald-600 to-emerald-500 dark:from-emerald-700 dark:to-emerald-600 text-white p-8 rounded-xl lg:col-span-3 shadow-xl mb-12 transform transition hover:shadow-2xl relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full opacity-10 -translate-x-8 -translate-y-32"></div>
@@ -118,25 +117,23 @@ export function MisionVision() {
           
           <div className="max-w-3xl mx-auto text-center relative z-10">
             <motion.div 
-              variants={animations.item}
+  
               className="inline-block mb-4 p-3 bg-white/20 rounded-full shadow-lg"
             >
               <Star className="h-8 w-8 text-white" />
             </motion.div>
             <motion.h2
-              variants={animations.item}
               className="text-4xl font-bold mb-4"
             >
               {currentContent.aboutTitle}
             </motion.h2>
             <motion.p
-              variants={animations.item}
+
               className="text-lg font-light mb-6"
             >
               {currentContent.aboutText}
             </motion.p>
             <motion.div 
-              variants={animations.item}
               className="h-1 w-20 bg-white/50 mx-auto rounded-full"
             ></motion.div>
           </div>
@@ -144,7 +141,7 @@ export function MisionVision() {
 
         {/* Mission Section - With image on right */}
         <motion.div 
-          variants={animations.item}
+
           className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12"
         >
           <div className="bg-emerald-100 dark:bg-emerald-900 p-6 rounded-xl shadow-lg transition duration-300 hover:shadow-xl">
@@ -163,7 +160,6 @@ export function MisionVision() {
           
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg flex items-center justify-center overflow-hidden">
             <motion.img 
-              variants={animations.float}
               animate="animate"
               initial="initial"
               src="mision-1.jpg" 
@@ -175,13 +171,12 @@ export function MisionVision() {
 
         {/* Vision Section - With image on left (intercalated) */}
         <motion.div 
-          variants={animations.item}
+
           className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12"
         >
           {/* Image now on the left */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg flex items-center justify-center overflow-hidden">
             <motion.img 
-              variants={animations.float}
               animate="animate"
               initial="initial"
               src="visio-1.jpg" 
@@ -208,7 +203,6 @@ export function MisionVision() {
 
         {/* Values Section - Enhanced with more values in two rows */}
         <motion.div
-          variants={animations.item}
           className="mt-8 bg-white dark:bg-gray-800 p-8 rounded-xl overflow-hidden shadow-lg relative"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-transparent dark:from-emerald-900/30 dark:to-transparent"></div>

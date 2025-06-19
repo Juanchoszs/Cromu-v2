@@ -6,6 +6,18 @@ import { PiggyBank, Download } from "lucide-react";
 import GenerarVoucher from "@/components/admin/GenerarVoucher";
 import { Button } from "@/components/ui/button";
 
+export interface Consignacion {
+  fecha: string;
+  monto: number;
+  descripcion?: string;
+}
+
+export interface PagoMensual {
+  pagado: boolean;
+  monto: number;
+  consignaciones: Consignacion[];
+}
+
 export interface Ahorrador {
   id: string;
   nombre: string;
@@ -16,41 +28,67 @@ export interface Ahorrador {
   email: string;
   ahorroTotal: number;
   pagosConsecutivos: number;
-  historialPagos: Record<string, { 
-    pagado: boolean; 
-    monto: number;
-    consignaciones: Array<{
-      fecha: string;
-      monto: number;
-      descripcion?: string;
-    }>;
-  }>;
+  historialPagos: Record<string, PagoMensual>;
   incentivoPorFidelidad: boolean;
 }
 
-export function UserSavings({ fullView = false }: { fullView?: boolean }) {
-  const [ahorrador, setAhorrador] = useState<Ahorrador | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+interface UserSavingsProps {
+  fullView?: boolean;
+  ahorros?: Ahorrador | null;
+}
+
+const formatearMoneda = (valor: number): string => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(valor);
+};
+
+const formatearFecha = (fecha: string): string => {
+  return new Date(fecha).toLocaleDateString('es-CO', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+export function UserSavings({ fullView = false, ahorros: initialAhorros = null }: UserSavingsProps) {
+  const [ahorrador, setAhorrador] = useState<Ahorrador | null>(initialAhorros);
+  const [isLoading, setIsLoading] = useState(!initialAhorros);
   const [error, setError] = useState<string | null>(null);
   const [mostrarVoucher, setMostrarVoucher] = useState(false);
 
   useEffect(() => {
-    const cedula = typeof window !== "undefined" ? sessionStorage.getItem("cedulaAhorrador") : null;
-    if (!cedula) {
-      setError("No se ha iniciado sesión con una cédula válida");
-      setIsLoading(false);
-      return;
-    }
-    fetch(`/api/ahorradores/buscar?cedula=${cedula}`)
-      .then(res => res.ok ? res.json() : Promise.reject("No encontrado"))
-      .then(data => setAhorrador(data))
-      .catch(() => setError("No se pudo cargar el ahorrador"))
-      .finally(() => setIsLoading(false));
-  }, []);
+    const cargarAhorros = async () => {
+      if (initialAhorros) return;
+      
+      try {
+        setIsLoading(true);
+        const cedula = sessionStorage.getItem("cedulaAhorrador");
+        if (!cedula) {
+          setError("No se ha iniciado sesión con una cédula válida");
+          return;
+        }
+        const response = await fetch(`/api/ahorradores/buscar?cedula=${cedula}`);
+        if (!response.ok) throw new Error("Error al obtener ahorros");
+        const data: Ahorrador = await response.json();
+        setAhorrador(data);
+      } catch (err) {
+        console.error('Error loading savings:', err);
+        setError("No se pudo cargar la información de ahorros");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    cargarAhorros();
+  }, [initialAhorros]);
 
   if (isLoading) {
     return (
-      <Card className="w-full h-full">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <PiggyBank className="h-5 w-5 text-emerald-600" />
@@ -58,7 +96,9 @@ export function UserSavings({ fullView = false }: { fullView?: boolean }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+          </div>
           <p className="text-gray-500 dark:text-gray-400 text-center">
             Cargando ahorros...
           </p>
@@ -69,7 +109,7 @@ export function UserSavings({ fullView = false }: { fullView?: boolean }) {
 
   if (error || !ahorrador) {
     return (
-      <Card className="w-full h-full">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <PiggyBank className="h-5 w-5 text-emerald-600" />
@@ -77,104 +117,136 @@ export function UserSavings({ fullView = false }: { fullView?: boolean }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-500 dark:text-gray-400 text-center">
-            {error || "No tienes ahorros registrados."}
+          <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+            {error || 'No tienes ahorros registrados'}
           </p>
         </CardContent>
       </Card>
     );
   }
 
+  const totalConsignado = Object.values(ahorrador.historialPagos || {}).reduce(
+    (sum, pago) => sum + (pago?.monto || 0), 0
+  );
+
   return (
-    <>
-      <Card className="w-full h-full shadow-lg border-emerald-100 dark:border-emerald-900">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 text-xl font-bold">
-            <PiggyBank className="h-6 w-6" />
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center gap-2">
+            <PiggyBank className="h-5 w-5 text-emerald-600" />
             Ahorros
           </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-gray-500 dark:text-gray-400 text-xs">Nombre:</div>
-              <div className="font-semibold">{ahorrador.nombre}</div>
-              <div className="text-gray-500 dark:text-gray-400 text-xs">Cédula:</div>
-              <div className="font-semibold">{ahorrador.cedula}</div>
-              <div className="text-gray-500 dark:text-gray-400 text-xs">Ahorro total:</div>
-              <div className="font-bold text-emerald-700 dark:text-emerald-300">
-                ${ahorrador.ahorroTotal.toLocaleString("es-CO")}
-              </div>
-              <div className="text-gray-500 dark:text-gray-400 text-xs">Pagos consecutivos:</div>
-              <div className="font-semibold">{ahorrador.pagosConsecutivos}</div>
-              <div className="text-gray-500 dark:text-gray-400 text-xs">Incentivo por fidelidad:</div>
-              <div>
-                {ahorrador.incentivoPorFidelidad ? (
-                  <span className="inline-block bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200 px-2 py-0.5 rounded text-xs font-semibold">Sí</span>
-                ) : (
-                  <span className="inline-block bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 px-2 py-0.5 rounded text-xs font-semibold">No</span>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="mt-6">
-            <h3 className="text-base font-semibold text-emerald-700 dark:text-emerald-400 mb-2">Historial de pagos</h3>
-            <div className="w-full overflow-x-auto rounded-lg bg-gray-50 dark:bg-gray-800 p-3 shadow-inner">
-              <table className="min-w-[500px] w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left py-1 px-2 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">Mes</th>
-                    <th className="text-left py-1 px-2 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">Monto</th>
-                    <th className="text-left py-1 px-2 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(ahorrador.historialPagos)
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([mes, pago]) => (
-                      <tr key={mes} className="border-b border-gray-200 dark:border-gray-700">
-                        <td className="py-1 px-2 whitespace-nowrap">{mes}</td>
-                        <td className="py-1 px-2 font-medium whitespace-nowrap">
-                          ${pago.monto.toLocaleString("es-CO")}
-                        </td>
-                        <td className="py-1 px-2 whitespace-nowrap">
-                          {pago.pagado ? (
-                            <span className="text-green-600 dark:text-green-400 font-medium">Pagado</span>
-                          ) : (
-                            <span className="text-yellow-600 dark:text-yellow-400 font-medium">Pendiente</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button
-            variant="outline"
-            className="w-full flex items-center justify-center gap-2"
+          <Button 
+            variant="outline" 
+            size="sm"
             onClick={() => setMostrarVoucher(true)}
+            className="flex items-center gap-1"
           >
             <Download className="h-4 w-4" />
-            Descargar voucher de ahorrador
+            Voucher
           </Button>
-        </CardFooter>
-      </Card>
-      {mostrarVoucher && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 max-w-lg w-full relative">
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Ahorrado</p>
+              <p className="text-lg font-semibold">
+                {formatearMoneda(ahorrador.ahorroTotal)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Consignado</p>
+              <p className="text-lg font-semibold">
+                {formatearMoneda(totalConsignado)}
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <p className="text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Miembro desde:</span>{' '}
+              <span>{formatearFecha(ahorrador.fechaIngreso)}</span>
+            </p>
+            <p className="text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Pagos consecutivos:</span>{' '}
+              <span>{ahorrador.pagosConsecutivos}</span>
+            </p>
+            {ahorrador.incentivoPorFidelidad && (
+              <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                ¡Tienes un incentivo por fidelidad activo! 🎉
+              </p>
+            )}
+          </div>
+
+          {Object.keys(ahorrador.historialPagos || {}).length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-sm font-medium mb-2">Historial de pagos</h3>
+              <div className="border rounded-lg overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Mes
+                      </th>
+                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Monto
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Estado
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {Object.entries(ahorrador.historialPagos)
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .map(([mes, pago]) => (
+                        <tr key={mes}>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm">
+                            {mes}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-right">
+                            {formatearMoneda(pago.monto)}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap">
+                            <span 
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                pago.pagado 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                              }`}
+                            >
+                              {pago.pagado ? 'Pagado' : 'Pendiente'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+      
+      {mostrarVoucher && ahorrador && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 relative">
             <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-white"
               onClick={() => setMostrarVoucher(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
             >
-              ×
+              <span className="sr-only">Cerrar</span>
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
             <GenerarVoucher ahorrador={ahorrador} onClose={() => setMostrarVoucher(false)} />
           </div>
         </div>
       )}
-    </>
+    </Card>
   );
 }

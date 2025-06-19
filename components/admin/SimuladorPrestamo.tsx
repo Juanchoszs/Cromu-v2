@@ -9,13 +9,6 @@ const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
-const formatDecimal = (value: number): string => {
-  return new Intl.NumberFormat("es-CO", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(value);
-};
-
 function calcularFrancesa(monto: number, tasa: number, plazo: number) {
   const mensual = tasa / 100;
   const cuota = monto * (mensual * Math.pow(1 + mensual, plazo)) / (Math.pow(1 + mensual, plazo) - 1);

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
 export default function MobileMenu() {
-  const { language, t } = useLanguage()
+  const { language } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
   const [isServicesOpen, setIsServicesOpen] = useState(false)
   const [isAboutOpen, setIsAboutOpen] = useState(false)

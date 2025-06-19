@@ -20,7 +20,7 @@ export default async function AdminLayout({
     if (sessionData.username !== 'CromuAdmin') {
       redirect('/login?from=/admin&error=unauthorized');
     }
-  } catch (error) {
+  } catch {
     // Error parsing session, redirect to login
     redirect('/login?from=/admin&error=session_error');
   }

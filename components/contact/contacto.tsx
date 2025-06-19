@@ -9,7 +9,7 @@ import { useLanguage } from "@/contexts/language-context";
 
 export function ContactPageHeader() {
   const [mounted, setMounted] = useState(false);
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
 
   const translations = {
     es: {
