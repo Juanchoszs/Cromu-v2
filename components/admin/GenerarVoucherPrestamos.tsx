@@ -423,9 +423,84 @@ export default function GenerarVoucherPrestamos({ prestamo, onClose }: GenerarVo
   }, [prestamo]);
   
   // Función para imprimir o generar PDF del voucher
-  const imprimirVoucher = () => {
-    window.print();
-  };
+const imprimirVoucher = async () => {
+  if (!voucherContenidoRef.current || !graficosGenerados) return;
+  
+  setLoading(true);
+  
+  try {
+    const voucherElement = voucherContenidoRef.current;
+    const options = {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      height: voucherElement.scrollHeight,
+      windowHeight: voucherElement.scrollHeight,
+      scrollX: 0,
+      scrollY: 0,
+      x: 0,
+      y: 0,
+      width: voucherElement.scrollWidth
+    };
+
+    const canvas = await html2canvas(voucherElement, options);
+    const imgData = canvas.toDataURL('image/png');
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      throw new Error('No se pudo abrir la ventana de impresión. Por favor, desbloquea las ventanas emergentes.');
+    }
+    
+    // Estilos para la impresión
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Comprobante de Préstamo - ${prestamo.nombreDeudor}</title>
+          <meta charset="utf-8">
+          <style>
+            @page {
+              size: auto;
+              margin: 0;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            img {
+              max-width: 100%;
+              height: auto;
+            }
+          </style>
+        </head>
+        <body>
+          <img src="${imgData}" style="width: 100%;" />
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+                window.onafterprint = function() {
+                  window.close();
+                };
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+  } catch (error) {
+    console.error('Error al preparar la impresión:', error);
+    alert('Error al preparar la impresión. Por favor, inténtalo de nuevo.');
+  } finally {
+    setLoading(false);
+  }
+};
   
   // Función para descargar el voucher como PDF
   const descargarPDF = async () => {
@@ -483,47 +558,99 @@ export default function GenerarVoucherPrestamos({ prestamo, onClose }: GenerarVo
     }
   };
   
-  // Compartir el voucher
-  const compartirVoucher = async () => {
-    if (!voucherContenidoRef.current) return;
+  
+  // Compartir el voucher como PDF
+const compartirVoucher = async () => {
+  if (!voucherContenidoRef.current || !graficosGenerados) return;
+  
+  setLoading(true);
+  
+  try {
+    const voucherElement = voucherContenidoRef.current;
+    const options = {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      height: voucherElement.scrollHeight,
+      windowHeight: voucherElement.scrollHeight,
+      scrollX: 0,
+      scrollY: 0,
+      x: 0,
+      y: 0,
+      width: voucherElement.scrollWidth
+    };
+
+    // Crear canvas con el contenido
+    const canvas = await html2canvas(voucherElement, options);
     
-    setLoading(true);
+    // Configuración del PDF
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const imgWidth = 210; // Ancho A4 en mm
+    const pageHeight = 297; // Alto A4 en mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
     
-    try {
-      const voucherElement = voucherContenidoRef.current;
-      const canvas = await html2canvas(voucherElement, { scale: 2 });
+    // Calcular el número de páginas necesarias
+    const totalPages = Math.ceil(imgHeight / pageHeight);
+    
+    // Agregar cada página al PDF
+    for (let i = 0; i < totalPages; i++) {
+      if (i > 0) {
+        pdf.addPage();
+      }
       
-      // Convertir canvas a blob
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          throw new Error("No se pudo crear la imagen para compartir");
-        }
-        
-        // Crear objeto para compartir
-        const shareData = {
-          title: `Comprobante de Préstamo - ${prestamo.nombreDeudor}`,
-          text: `Comprobante de préstamo de ${prestamo.nombreDeudor} - CROMU Finance Services`,
-          files: [
-            new File([blob], `comprobante_prestamo_${prestamo.nombreDeudor.replace(/\s+/g, '_')}.png`, { 
-              type: 'image/png' 
-            })
-          ]
-        };
-        
-        // Verificar si la API de compartir está disponible
-        if (navigator.canShare && navigator.canShare(shareData)) {
-          await navigator.share(shareData);
-        } else {
-          alert("Su navegador no admite la función de compartir archivos");
-        }
-      }, 'image/png');
-    } catch (error) {
-      console.error("Error al compartir:", error);
-      alert("Hubo un error al compartir el comprobante");
-    } finally {
-      setLoading(false);
+      // Calcular posición Y para esta página
+      const positionY = -i * pageHeight;
+      
+      // Agregar la porción de la imagen correspondiente a esta página
+      pdf.addImage(
+        canvas.toDataURL('image/png'),
+        'PNG',
+        0, // x
+        positionY, // y
+        imgWidth,
+        imgHeight
+      );
     }
-  };
+    
+    // Generar el blob del PDF
+    const pdfBlob = pdf.output('blob');
+    const pdfFile = new File(
+      [pdfBlob], 
+      `Comprobante_Prestamo_${prestamo.nombreDeudor.replace(/\s+/g, '_')}.pdf`, 
+      { type: 'application/pdf' }
+    );
+    
+    // Intentar compartir el PDF
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+      await navigator.share({
+        title: 'Comprobante de Préstamo',
+        text: `Comprobante de préstamo de ${prestamo.nombreDeudor}`,
+        files: [pdfFile]
+      });
+    } else {
+      // Si no se puede compartir, ofrecer descargar el PDF
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Comprobante_Prestamo_${prestamo.nombreDeudor.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpiar
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 0);
+    }
+  } catch (error) {
+    console.error('Error al compartir el comprobante:', error);
+    alert('No se pudo compartir el comprobante. Intenta descargarlo en su lugar.');
+  } finally {
+    setLoading(false);
+  }
+};
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:p-0 print:bg-white print:inset-auto">

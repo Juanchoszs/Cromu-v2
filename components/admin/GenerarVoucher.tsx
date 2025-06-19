@@ -327,8 +327,83 @@ export default function GenerarVoucher({ ahorrador, onClose }: GenerarVoucherPro
   }, [ahorrador]);
   
   // Función para imprimir o generar PDF del voucher
-  const imprimirVoucher = () => {
-    window.print();
+  const imprimirVoucher = async () => {
+    if (!voucherContenidoRef.current || !graficosGenerados) return;
+    
+    setLoading(true);
+    
+    try {
+      const voucherElement = voucherContenidoRef.current;
+      const options = {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        height: voucherElement.scrollHeight,
+        windowHeight: voucherElement.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0,
+        width: voucherElement.scrollWidth
+      };
+  
+      const canvas = await html2canvas(voucherElement, options);
+      const imgData = canvas.toDataURL('image/png');
+      
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        throw new Error('No se pudo abrir la ventana de impresión. Por favor, desbloquea las ventanas emergentes.');
+      }
+      
+      // Estilos para la impresión
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Comprobante de Ahorro - ${ahorrador.nombre}</title>
+            <meta charset="utf-8">
+            <style>
+              @page {
+                size: auto;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              img {
+                max-width: 100%;
+                height: auto;
+              }
+            </style>
+          </head>
+          <body>
+            <img src="${imgData}" style="width: 100%;" />
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                  window.onafterprint = function() {
+                    window.close();
+                  };
+                }, 500);
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      
+      printWindow.document.close();
+    } catch (error) {
+      console.error('Error al preparar la impresión:', error);
+      alert('Error al preparar la impresión. Por favor, inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
+    }
   };
   
   // Función para descargar el voucher como PDF
