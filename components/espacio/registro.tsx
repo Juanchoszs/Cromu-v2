@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Lock, User, ArrowRight, Wallet, Eye, EyeOff } from "lucide-react";
+import { Lock, User, ArrowRight, Wallet, Eye, EyeOff, Mail } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
 export default function Registro() {
   const { language, t } = useLanguage(); // Se mantiene el idioma desde el contexto
   const [formData, setFormData] = useState({
     cedula: "",
+    email: "",
     password: "",
     confirmPassword: "",
   });
@@ -25,22 +26,28 @@ export default function Registro() {
       subtitle: "Crea tu cuenta para acceder a tu espacio personal.",
       description: "Completa los campos para registrarte de forma segura.",
       cedula: "Cédula",
+      email: "Correo Electrónico",
+      emailPlaceholder: "ejemplo@dominio.com",
       password: "Contraseña",
       confirmPassword: "Confirmar Contraseña",
       register: "Registrarse",
       registering: "Registrando...",
       passwordsDontMatch: "Las contraseñas no coinciden.",
+      invalidEmail: "Por favor ingresa un correo electrónico válido.",
     },
     en: {
       title: "Register",
       subtitle: "Create your account to access your personal space.",
       description: "Fill in the fields to register securely.",
       cedula: "ID Number",
+      email: "Email",
+      emailPlaceholder: "example@domain.com",
       password: "Password",
       confirmPassword: "Confirm Password",
       register: "Register",
       registering: "Registering...",
       passwordsDontMatch: "Passwords do not match.",
+      invalidEmail: "Please enter a valid email address.",
     },
   };
 
@@ -63,6 +70,14 @@ export default function Registro() {
     setIsSubmitting(true);
     setError("");
 
+    // Validar formato de correo electrónico
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError(t(translations).invalidEmail);
+      setIsSubmitting(false);
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError(t(translations).passwordsDontMatch);
       setIsSubmitting(false);
@@ -75,6 +90,7 @@ export default function Registro() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cedula: formData.cedula,
+          email: formData.email,
           password: formData.password,
         }),
       });
@@ -181,6 +197,30 @@ export default function Registro() {
                       placeholder={t(translations).cedula}
                       className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
                     />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      {t(translations).email}
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Mail className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        placeholder={t(translations).emailPlaceholder}
+                        className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                      />
+                    </div>
                   </div>
 
                   <div>

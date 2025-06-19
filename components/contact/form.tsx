@@ -122,6 +122,17 @@ const staggerContainer = {
   }
 };
 
+// Define los máximos por campo
+const MAX_LENGTHS = {
+  full_name: 40,
+  email: 40,
+  phone: 20,
+  service: 30,
+  document_type: 20,
+  document_number: 20,
+  message: 500,
+};
+
 export function ContactFormComponent() {
   const { language, t } = useLanguage();
   const [mounted, setMounted] = useState(false);
@@ -149,12 +160,20 @@ export function ContactFormComponent() {
     setMounted(true);
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value, type } = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
     const checked = type === "checkbox" && (e.target as HTMLInputElement).checked;
+    // Si el campo tiene un máximo, trunca el valor
+    const max = MAX_LENGTHS[name as keyof typeof MAX_LENGTHS];
+    let newValue = value;
+    if (max && value.length > max) {
+      newValue = value.slice(0, max);
+    }
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : newValue,
     }));
   };
 
@@ -276,6 +295,7 @@ export function ContactFormComponent() {
                           type="text"
                           name="full_name"
                           required
+                          maxLength={MAX_LENGTHS.full_name}
                           value={formData.full_name}
                           onChange={handleInputChange}
                           placeholder={t(translations, "namePlaceholder")}
@@ -291,6 +311,7 @@ export function ContactFormComponent() {
                           type="email"
                           name="email"
                           required
+                          maxLength={MAX_LENGTHS.email}
                           value={formData.email}
                           onChange={handleInputChange}
                           placeholder={t(translations, "emailPlaceholder")}
@@ -308,6 +329,7 @@ export function ContactFormComponent() {
                           type="tel"
                           name="phone"
                           required
+                          maxLength={MAX_LENGTHS.phone}
                           value={formData.phone}
                           onChange={handleInputChange}
                           placeholder={t(translations, "phonePlaceholder")}
@@ -350,6 +372,7 @@ export function ContactFormComponent() {
                           type="text"
                           name="document_number"
                           required
+                          maxLength={MAX_LENGTHS.document_number}
                           value={formData.document_number}
                           onChange={handleInputChange}
                           placeholder={t(translations, "documentPlaceholder")}
@@ -390,6 +413,7 @@ export function ContactFormComponent() {
                       <textarea
                         name="message"
                         required
+                        maxLength={MAX_LENGTHS.message}
                         value={formData.message}
                         onChange={handleInputChange}
                         placeholder={t(translations, "messagePlaceholder")}

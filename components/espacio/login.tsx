@@ -207,7 +207,7 @@ export default function Login() {
 
               <div className="text-right">
                 <a
-                  href="/recuperar-contraseña"
+                  href="/forgot-password"
                   className="text-sm text-emerald-700 dark:text-emerald-400 hover:underline"
                 >
                   {t(translations).forgotPassword}
