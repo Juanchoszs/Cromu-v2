@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         { error: "Formato de solicitud inválido" }, 
         { status: 400 }

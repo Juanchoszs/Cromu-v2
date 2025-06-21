@@ -3,9 +3,7 @@
 import { useRef, useEffect, useMemo } from "react";
 import { motion, useAnimation, useInView } from "framer-motion";
 import { useLanguage } from "@/contexts/language-context";
-import { useTheme } from "next-themes";
 import { 
-  Calendar, 
   TrendingUp, 
   DollarSign, 
   Tv, 
@@ -20,7 +18,6 @@ import React from "react";
 
 export function TimelineHistory() {
   const { language } = useLanguage();
-  const { theme } = useTheme();
   const controls = useAnimation();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "0px 0px -200px 0px" });
@@ -107,7 +104,7 @@ export function TimelineHistory() {
         transition: {
           duration: 6,
           repeat: Infinity,
-          repeatType: "loop" as "loop",
+          repeatType: "loop",
           ease: "easeInOut"
         }
       }
@@ -231,12 +228,11 @@ export function TimelineHistory() {
       >
         {/* Header Section */}
         <motion.div
-          variants={animations.item}
           className="text-center mb-16"
         >
           <motion.div 
             className="inline-block mb-3"
-            variants={animations.icon}
+
           >
             <div className="p-4 bg-emerald-100 dark:bg-emerald-800 rounded-full shadow-md">
               <Clock className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
@@ -259,7 +255,6 @@ export function TimelineHistory() {
             <div className="h-1 w-10 bg-emerald-300 dark:bg-emerald-700 rounded-full mx-2"></div>
           </motion.div>
           <motion.p 
-            variants={animations.item}
             className="max-w-2xl mx-auto text-gray-600 dark:text-gray-300"
           >
             {currentContent.description}
@@ -286,7 +281,6 @@ export function TimelineHistory() {
                 strokeWidth="4"
                 strokeLinecap="round"
                 fill="none"
-                variants={animations.line}
                 className="dark:stroke-emerald-500"
               />
             </svg>
@@ -296,14 +290,14 @@ export function TimelineHistory() {
           {currentContent.timeline.map((item, index) => (
             <motion.div
               key={index}
-              variants={animations.item}
+
               className={`relative flex flex-col md:flex-row ${
                 index % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
               } mb-16 z-10`}
             >
               {/* Year Badge */}
               <motion.div 
-                variants={animations.yearBadge}
+
                 className="absolute left-4 md:left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20"
               >
                 <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 text-white shadow-lg">
@@ -347,7 +341,7 @@ export function TimelineHistory() {
 
           {/* Future Section */}
           <motion.div
-            variants={animations.item}
+
             className="mt-20 mb-10 bg-gradient-to-r from-emerald-500 to-teal-600 dark:from-emerald-700 dark:to-teal-800 rounded-xl p-8 text-white shadow-xl relative overflow-hidden"
           >
             {/* Decorative elements */}
@@ -356,7 +350,7 @@ export function TimelineHistory() {
             
             {/* Floating stars */}
             <motion.div 
-              variants={animations.floatingStar}
+
               animate="animate"
               initial="initial"
               className="absolute top-10 right-10"
@@ -364,7 +358,6 @@ export function TimelineHistory() {
               <Star className="h-10 w-10 text-yellow-200 opacity-50" />
             </motion.div>
             <motion.div 
-              variants={animations.floatingStar}
               animate="animate"
               initial="initial"
               className="absolute bottom-10 left-20"
@@ -381,7 +374,6 @@ export function TimelineHistory() {
                 {currentContent.futureTitle}
               </motion.h3>
               <motion.p
-                variants={animations.item}
                 className="text-lg font-light"
               >
                 {currentContent.futureText}

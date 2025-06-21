@@ -8,7 +8,7 @@ import { motion, useScroll, useTransform } from "framer-motion"
 import { Shield, Lock, Eye, Share2, Users, FileText, Mail, Phone } from "lucide-react"
 
 export default function PoliticaPrivacidadPage() {
-  const { t, language } = useLanguage()
+  const { language } = useLanguage() // Elimina 't'
   const [mounted, setMounted] = useState(false)
   const { scrollYProgress } = useScroll()
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"])
@@ -235,18 +235,6 @@ export default function PoliticaPrivacidadPage() {
       transition: {
         staggerChildren: 0.2,
         delayChildren: 0.1
-      }
-    }
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
       }
     }
   }

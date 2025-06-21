@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { FiChevronRight, FiMail } from "react-icons/fi"
 
 export default function TerminosPage() {
-  const { t, language } = useLanguage()
+  const { language } = useLanguage() // Elimina 't'
   const [activeSection, setActiveSection] = useState<string | null>(null)
 
   // Definir las traducciones
@@ -157,7 +157,7 @@ export default function TerminosPage() {
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [language])
+  }, [language, translations.sections]) // Agrega translations.sections
 
   // Función para renderizar el contenido, manejando tanto strings como arrays
   const renderContent = (content: string | string[]) => {

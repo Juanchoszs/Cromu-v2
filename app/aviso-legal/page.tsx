@@ -8,7 +8,7 @@ import { motion, useScroll, useTransform } from "framer-motion"
 import { Scale, Building, FileText, AlertTriangle, Globe, Gavel, Mail, Phone } from "lucide-react"
 
 export default function AvisoLegalPage() {
-  const { t, language } = useLanguage()
+  const { language } = useLanguage() // Elimina 't'
   const [mounted, setMounted] = useState(false)
   const { scrollYProgress } = useScroll()
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"])
@@ -265,18 +265,6 @@ export default function AvisoLegalPage() {
       transition: {
         staggerChildren: 0.2,
         delayChildren: 0.1
-      }
-    }
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: [0, 0, 0.58, 1] // cubic-bezier for easeOut
       }
     }
   }

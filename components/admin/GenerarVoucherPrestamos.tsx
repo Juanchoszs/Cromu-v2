@@ -425,9 +425,9 @@ export default function GenerarVoucherPrestamos({ prestamo, onClose }: GenerarVo
   // Función para imprimir o generar PDF del voucher
 const imprimirVoucher = async () => {
   if (!voucherContenidoRef.current || !graficosGenerados) return;
-  
+
   setLoading(true);
-  
+
   try {
     const voucherElement = voucherContenidoRef.current;
     const options = {
@@ -447,13 +447,13 @@ const imprimirVoucher = async () => {
 
     const canvas = await html2canvas(voucherElement, options);
     const imgData = canvas.toDataURL('image/png');
-    
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       throw new Error('No se pudo abrir la ventana de impresión. Por favor, desbloquea las ventanas emergentes.');
     }
-    
-    // Estilos para la impresión
+
+    // Estilos para impresión multipágina
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -461,24 +461,36 @@ const imprimirVoucher = async () => {
           <title>Comprobante de Préstamo - ${prestamo.nombreDeudor}</title>
           <meta charset="utf-8">
           <style>
-            @page {
-              size: auto;
-              margin: 0;
+            @media print {
+              body, html {
+                margin: 0;
+                padding: 0;
+                width: 210mm;
+                min-height: 297mm;
+                background: #fff;
+              }
+              img {
+                width: 210mm !important;
+                height: auto !important;
+                page-break-after: always;
+              }
             }
             body {
               margin: 0;
               padding: 0;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
+              background: #fff;
             }
             img {
-              max-width: 100%;
+              width: 100%;
               height: auto;
+              display: block;
             }
           </style>
         </head>
         <body>
-          <img src="${imgData}" style="width: 100%;" />
+          <img src="${imgData}" />
           <script>
             window.onload = function() {
               setTimeout(function() {
@@ -492,7 +504,7 @@ const imprimirVoucher = async () => {
         </body>
       </html>
     `);
-    
+
     printWindow.document.close();
   } catch (error) {
     console.error('Error al preparar la impresión:', error);
@@ -504,60 +516,75 @@ const imprimirVoucher = async () => {
   
   // Función para descargar el voucher como PDF
   const descargarPDF = async () => {
-    if (!voucherContenidoRef.current || !graficosGenerados) return;
-    
-    setLoading(true);
-    
-    try {
-      const voucherElement = voucherContenidoRef.current;
-      
-      // Configuración para mejor captura de canvas y tablas
-      const options = {
-        scale: 2, // Mayor escala para mejor calidad
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        height: voucherElement.scrollHeight,
-        windowHeight: voucherElement.scrollHeight
-      };
-      
-      // Crear canvas con todo el contenido
-      const canvas = await html2canvas(voucherElement, options);
-      
-      // Determinar dimensiones del PDF (A4)
-      const imgWidth = 210; // A4 ancho en mm
-      const pageHeight = 297; // A4 alto en mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      // Inicializar PDF
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      let heightLeft = imgHeight;
-      let position = 0;
-      
-      // Primera página
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      // Agregar páginas adicionales si es necesario
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+  if (!voucherContenidoRef.current || !graficosGenerados) return;
+
+  setLoading(true);
+
+  try {
+    const voucherElement = voucherContenidoRef.current;
+    const options = {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      height: voucherElement.scrollHeight,
+      windowHeight: voucherElement.scrollHeight
+    };
+
+    const canvas = await html2canvas(voucherElement, options);
+
+    const imgWidth = 210; // mm
+    const pageHeight = 297; // mm
+    const pdf = new jsPDF('p', 'mm', 'a4');
+
+    // Relación px/mm
+    const pxPerMm = canvas.width / imgWidth;
+    const pageHeightPx = pageHeight * pxPerMm;
+    let renderedHeight = 0;
+    let pageNum = 0;
+
+    while (renderedHeight < canvas.height) {
+      // Crear un canvas temporal para cada página
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = Math.min(pageHeightPx, canvas.height - renderedHeight);
+      const ctx = pageCanvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(
+          canvas,
+          0,
+          renderedHeight,
+          canvas.width,
+          pageCanvas.height,
+          0,
+          0,
+          canvas.width,
+          pageCanvas.height
+        );
       }
-      
-      // Descargar el PDF
-      pdf.save(`Comprobante_Prestamo_${prestamo.nombreDeudor.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
-    } catch (error) {
-      console.error("Error al generar PDF:", error);
-      alert("Hubo un error al generar el PDF. Intente nuevamente.");
-    } finally {
-      setLoading(false);
+      const imgData = pageCanvas.toDataURL('image/png');
+      if (pageNum > 0) pdf.addPage();
+      pdf.addImage(
+        imgData,
+        'PNG',
+        0,
+        0,
+        imgWidth,
+        (pageCanvas.height / pxPerMm)
+      );
+      renderedHeight += pageCanvas.height;
+      pageNum++;
     }
-  };
-  
+
+    pdf.save(`Comprobante_Prestamo_${prestamo.nombreDeudor.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
+  } catch (error) {
+    console.error("Error al generar PDF:", error);
+    alert("Hubo un error al generar el PDF. Intente nuevamente.");
+  } finally {
+    setLoading(false);
+  }
+};
   
   // Compartir el voucher como PDF
 const compartirVoucher = async () => {
@@ -653,10 +680,7 @@ const compartirVoucher = async () => {
 };
   
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:p-0 print:bg-white print:inset-auto"
-      id="voucher-root"
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:p-0 print:bg-white print:inset-auto">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-full print:overflow-visible">
         <div className="p-6 print:p-2">
           {/* Barra de herramientas - Se oculta al imprimir */}

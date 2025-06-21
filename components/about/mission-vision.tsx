@@ -3,12 +3,11 @@
 import { useRef, useEffect, useMemo } from "react";
 import { motion, useAnimation, useInView } from "framer-motion";
 import { useLanguage } from "@/contexts/language-context";
-import { useTheme } from "next-themes";
 import { Target, Eye, Heart, Star,  } from "lucide-react";
+import Image from "next/image";
 
 export function MisionVision() {
   const { language } = useLanguage();
-  const { theme } = useTheme();
   const controls = useAnimation();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "0px 0px -100px 0px" });
@@ -203,22 +202,20 @@ export function MisionVision() {
 
         {/* Values Section - Enhanced with more values in two rows */}
         <motion.div
+
           className="mt-8 bg-white dark:bg-gray-800 p-8 rounded-xl overflow-hidden shadow-lg relative"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-transparent dark:from-emerald-900/30 dark:to-transparent"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
             <div className="flex items-center justify-center">
               <div className="h-32 w-32 rounded-full bg-emerald-100 dark:bg-emerald-800 p-2 shadow-inner flex items-center justify-center">
-                <img 
-                  src="/logo-cromu.png" 
-                  alt="CROMU Logo" 
+                <Image
+                  src="/logo-cromu.png"
+                  alt="CROMU Logo"
                   className="h-24 w-24 object-contain"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.onerror = null;
-                    target.src = "/logo-cromu.png";
-                    target.alt = "CROMU Logo Placeholder";
-                  }}
+                  width={96}
+                  height={96}
+                  priority
                 />
               </div>
             </div>

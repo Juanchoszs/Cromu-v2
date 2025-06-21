@@ -15,7 +15,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { cedula, password } = body;
 
+    console.log("Intentando login con:", cedula, password);
+
     if (!cedula || !password) {
+      console.log("Faltan campos");
       return NextResponse.json(
         { error: "Todos los campos son obligatorios." },
         { status: 400 }
@@ -24,6 +27,7 @@ export async function POST(req: Request) {
 
     // Validación manual para administrador
     if (cedula === "CromuAdmin" && password === "CromuAdministracion#") {
+      console.log("Login admin exitoso");
       // Create session data
       const sessionData = { username: 'CromuAdmin', role: 'admin', timestamp: Date.now() };
       
@@ -49,7 +53,10 @@ export async function POST(req: Request) {
 
     // Validación para usuarios normales desde la base de datos
     const result = await pool.query("SELECT * FROM usuarios WHERE cedula = $1", [cedula]);
+    console.log("Resultado de búsqueda:", result.rows);
+
     if (result.rows.length === 0) {
+      console.log("No se encontró usuario");
       return NextResponse.json(
         { error: "Cédula o contraseña incorrecta." },
         { status: 400 }
@@ -58,13 +65,17 @@ export async function POST(req: Request) {
 
     const user = result.rows[0];
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    console.log("¿Contraseña válida?", isPasswordValid);
+
     if (!isPasswordValid) {
+      console.log("Contraseña incorrecta");
       return NextResponse.json(
         { error: "Cédula o contraseña incorrecta." },
         { status: 400 }
       );
     }
 
+    console.log("Login usuario exitoso");
     // Usuario normal
     return NextResponse.json(
       { message: "Inicio de sesión exitoso.", isAdmin: false },

@@ -193,7 +193,7 @@ export default function PoliticaCookiesPage() {
       <main className="container mx-auto px-4 py-16">
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <motion.div className="lg:col-span-3" variants={itemVariants}>
+            <motion.div className="lg:col-span-3" >
               <div className="sticky top-6">
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
                   <h3 className="text-[#1a5c41] dark:text-emerald-400 text-lg font-bold mb-4 flex items-center">
@@ -220,7 +220,7 @@ export default function PoliticaCookiesPage() {
               </div>
             </motion.div>
 
-            <motion.div className="lg:col-span-9" variants={itemVariants}>
+            <motion.div className="lg:col-span-9">
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
                 {Object.entries(translations.sections).map(([key, section], index) => (
                   <motion.section key={key} id={key} 

@@ -30,18 +30,6 @@ export function ConoceCromu() {
     },
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut",
-      },
-    },
-  };
-
   const buttonVariants = {
     hover: {
       scale: 1.05,
@@ -121,7 +109,7 @@ export function ConoceCromu() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
         <div className="flex flex-col justify-center space-y-6 p-4">
-          <motion.div variants={itemVariants} className="flex items-center gap-2">
+          <motion.div className="flex items-center gap-2">
             <Users className="text-white/90" size={24} />
             <AnimatePresence mode="wait">
               <motion.h2 
@@ -139,7 +127,6 @@ export function ConoceCromu() {
           </motion.div>
           
           <motion.h3 
-            variants={itemVariants}
             className="text-white/90 text-xl font-medium -mt-4"
           >
           </motion.h3>
@@ -158,7 +145,7 @@ export function ConoceCromu() {
             </motion.p>
           </AnimatePresence>
           
-          <motion.ul variants={itemVariants} className="space-y-2">
+          <motion.ul  className="space-y-2">
             {currentContent.benefits.map((benefit, index) => (
               <motion.li 
                 key={index}
@@ -174,7 +161,6 @@ export function ConoceCromu() {
           </motion.ul>
           
           <motion.div 
-            variants={itemVariants}
             className="flex flex-col sm:flex-row gap-4 mt-4"
           >
             <Link href={currentContent.routes.services}>
@@ -211,7 +197,6 @@ export function ConoceCromu() {
         </div>
         
         <motion.div
-          variants={itemVariants}
           className="relative h-64 md:h-full min-h-[300px] rounded-lg overflow-hidden"
         >
           <motion.div
@@ -224,7 +209,7 @@ export function ConoceCromu() {
             className="absolute inset-0"
           >
             <Image
-              src="nosotros-1.jpg" // Cambia la ruta de la imagen según tu estructura de carpetas
+              src="/nosotros-1.jpg"
               alt={currentContent.imageCreditText}
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
@@ -270,18 +255,6 @@ export function MisionVision() {
     },
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut",
-      },
-    },
-  };
-
   const content = {
     es: {
       mision: {
@@ -319,7 +292,6 @@ export function MisionVision() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* Misión */}
         <motion.div 
-          variants={itemVariants}
           className="space-y-4"
         >
           <div className="flex items-center gap-3 mb-6">
@@ -339,7 +311,6 @@ export function MisionVision() {
 
         {/* Visión */}
         <motion.div 
-          variants={itemVariants}
           className="space-y-4"
         >
           <div className="flex items-center gap-3 mb-6">

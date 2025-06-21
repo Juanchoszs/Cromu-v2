@@ -1,29 +1,24 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageInner() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
   const token = searchParams.get("token") || "";
 
-  // Validar el token al cargar la página
   useEffect(() => {
     const validateToken = async () => {
       if (!email || !token) {
         setError("Enlace de restablecimiento inválido.");
-        setIsValidToken(false);
-        setIsLoading(false);
         return;
       }
 
@@ -37,13 +32,8 @@ export default function ResetPasswordPage() {
         if (!response.ok) {
           throw new Error("Token inválido o expirado");
         }
-
-        setIsValidToken(true);
-      } catch (err) {
+      } catch {
         setError("El enlace de restablecimiento es inválido o ha expirado. Por favor, solicita un nuevo enlace.");
-        setIsValidToken(false);
-      } finally {
-        setIsLoading(false);
       }
     };
 
@@ -82,7 +72,6 @@ export default function ResetPasswordPage() {
 
       setMessage("¡Contraseña restablecida con éxito! Redirigiendo al espacio de usuario...");
       
-      // Redirigir al espacio de usuario después de 3 segundos
       setTimeout(() => {
         router.push("/espacio");
       }, 3000);
@@ -151,5 +140,13 @@ export default function ResetPasswordPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <ResetPasswordPageInner />
+    </Suspense>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { PiggyBank, Download } from "lucide-react";
 import GenerarVoucher from "@/components/admin/GenerarVoucher";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ const formatearFecha = (fecha: string): string => {
   });
 };
 
-export function UserSavings({ fullView = false, ahorros: initialAhorros = null }: UserSavingsProps) {
+export function UserSavings({ ahorros: initialAhorros = null }: UserSavingsProps) {
   const [ahorrador, setAhorrador] = useState<Ahorrador | null>(initialAhorros);
   const [isLoading, setIsLoading] = useState(!initialAhorros);
   const [error, setError] = useState<string | null>(null);
